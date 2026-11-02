@@ -1,0 +1,87 @@
+<section class="card">
+  <h2>Check in</h2>
+
+  @if (error(); as message) {
+    <app-error-banner [message]="message" [retryable]="false" />
+  }
+
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="form-grid">
+    <mat-form-field appearance="outline">
+      <mat-label>Plate number</mat-label>
+      <input
+        #plate
+        matInput
+        formControlName="plateNumber"
+        [errorStateMatcher]="errorMatcher"
+        autocomplete="off"
+        autocapitalize="characters"
+        spellcheck="false"
+        required
+        class="plate-input"
+      />
+      @if (form.controls.plateNumber.hasError('required')) {
+        <mat-error>Enter the plate number.</mat-error>
+      } @else if (form.controls.plateNumber.hasError('plate')) {
+        <mat-error>Use 2 to 10 letters or digits (spaces and dashes are ignored).</mat-error>
+      }
+    </mat-form-field>
+
+    @if (needsType()) {
+      <p class="hint" role="status">
+        <mat-icon aria-hidden="true">info</mat-icon>
+        New plate: choose the vehicle type to continue.
+      </p>
+      <mat-form-field appearance="outline">
+        <mat-label>Vehicle type</mat-label>
+        <mat-select formControlName="vehicleType" required>
+          @for (t of types; track t.value) {
+            <mat-option [value]="t.value">{{ t.label }}</mat-option>
+          }
+        </mat-select>
+        @if (form.controls.vehicleType.touched && !form.controls.vehicleType.value) {
+          <mat-error>Choose a vehicle type.</mat-error>
+        }
+      </mat-form-field>
+    }
+
+    <button
+      mat-flat-button
+      type="submit"
+      class="submit"
+      [disabled]="submitting()"
+      [attr.aria-busy]="submitting()"
+    >
+      @if (submitting()) {
+        <mat-spinner diameter="20" aria-label="Checking in" />
+      } @else {
+        <span class="btn-content"><mat-icon aria-hidden="true">login</mat-icon>Check in</span>
+      }
+    </button>
+  </form>
+
+  @if (last(); as s) {
+    <div class="ticket" role="status">
+      <p class="label">Checked in. Give the driver this ticket:</p>
+      <p class="code">{{ s.ticketCode }}</p>
+      <dl>
+        <div>
+          <dt>Vehicle</dt>
+          <dd class="plate">{{ s.plateNumber }}</dd>
+        </div>
+        <div>
+          <dt>Spot</dt>
+          <dd>{{ s.spotCode }} (level {{ s.levelNumber }})</dd>
+        </div>
+        <div>
+          <dt>Time</dt>
+          <dd>{{ s.checkInAtUtc | date: 'mediumTime' }}</dd>
+        </div>
+      </dl>
+      @if (s.reservationId) {
+        <p class="reserved">
+          <mat-icon aria-hidden="true">event_available</mat-icon> Used the driver's reservation.
+        </p>
+      }
+    </div>
+  }
+</section>

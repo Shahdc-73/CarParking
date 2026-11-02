@@ -1,0 +1,68 @@
+<div class="toolbar-row">
+  <p class="grow intro">The vehicles you park. You need one to make a reservation.</p>
+  <button mat-flat-button type="button" (click)="add()">
+    <mat-icon aria-hidden="true">add</mat-icon>
+    Add vehicle
+  </button>
+</div>
+
+@switch (state().status) {
+  @case ('loading') {
+    <app-loading label="Loading your vehicles" />
+  }
+  @case ('error') {
+    @if (state(); as s) {
+      @if (s.status === 'error') {
+        <app-error-banner [message]="s.message" (retry)="load()" />
+      }
+    }
+  }
+  @case ('ready') {
+    @if (state(); as s) {
+      @if (s.status === 'ready') {
+        @if (s.vehicles.length === 0) {
+          <app-empty-state
+            icon="directions_car"
+            title="No vehicles yet"
+            message="Add your car or motorcycle to start reserving spots."
+          />
+        } @else {
+          <ul class="vehicles">
+            @for (v of s.vehicles; track v.id) {
+              <li class="vehicle">
+                <span class="icon" aria-hidden="true"
+                  ><mat-icon>{{ icon(v) }}</mat-icon></span
+                >
+                <div class="info">
+                  <p class="plate">{{ v.plateNumber }}</p>
+                  <p class="meta">{{ typeLabel(v.type) }} · {{ v.color }}</p>
+                  @if (v.hasDisabledPermit) {
+                    <app-chip label="Disabled permit" tone="info" icon="accessible" />
+                  }
+                </div>
+                <div class="actions">
+                  <button
+                    mat-icon-button
+                    type="button"
+                    (click)="edit(v)"
+                    [attr.aria-label]="'Edit ' + v.plateNumber"
+                  >
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button
+                    mat-icon-button
+                    type="button"
+                    (click)="remove(v)"
+                    [attr.aria-label]="'Remove ' + v.plateNumber"
+                  >
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+              </li>
+            }
+          </ul>
+        }
+      }
+    }
+  }
+}

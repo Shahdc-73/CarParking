@@ -45,16 +45,64 @@ export const routes: Routes = [
       },
       {
         path: 'my',
-        title: 'My parking · ParkWise',
         canActivate: [roleGuard('Driver')],
         loadComponent: () =>
           import('./features/reservations/driver-home').then((m) => m.DriverHome),
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: 'vehicles' },
+          {
+            path: 'vehicles',
+            title: 'My vehicles · ParkWise',
+            loadComponent: () =>
+              import('./features/reservations/my-vehicles').then((m) => m.MyVehicles),
+          },
+          {
+            path: 'reservations',
+            title: 'My reservations · ParkWise',
+            loadComponent: () =>
+              import('./features/reservations/my-reservations').then((m) => m.MyReservations),
+          },
+          {
+            path: 'history',
+            title: 'My parking history · ParkWise',
+            loadComponent: () => import('./features/history/my-history').then((m) => m.MyHistory),
+          },
+        ],
       },
       {
         path: 'admin',
-        title: 'Administration · ParkWise',
         canActivate: [roleGuard('Admin')],
         loadComponent: () => import('./features/admin/admin-home').then((m) => m.AdminHome),
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: 'lots' },
+          {
+            path: 'lots',
+            title: 'Lots · ParkWise',
+            loadComponent: () => import('./features/admin/admin-lots').then((m) => m.AdminLots),
+          },
+          {
+            path: 'lots/:id',
+            title: 'Manage lot · ParkWise',
+            loadComponent: () =>
+              import('./features/admin/admin-lot-detail').then((m) => m.AdminLotDetail),
+          },
+          {
+            path: 'pricing',
+            title: 'Pricing · ParkWise',
+            loadComponent: () =>
+              import('./features/admin/admin-pricing').then((m) => m.AdminPricing),
+          },
+          {
+            path: 'users',
+            title: 'Users · ParkWise',
+            loadComponent: () => import('./features/admin/admin-users').then((m) => m.AdminUsers),
+          },
+          {
+            path: 'audit',
+            title: 'Audit log · ParkWise',
+            loadComponent: () => import('./features/admin/admin-audit').then((m) => m.AdminAudit),
+          },
+        ],
       },
       {
         path: 'forbidden',

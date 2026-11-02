@@ -1,0 +1,120 @@
+<div class="toolbar-row">
+  <mat-form-field appearance="outline" subscriptSizing="dynamic" class="grow">
+    <mat-label>Search lots</mat-label>
+    <input
+      matInput
+      type="search"
+      autocomplete="off"
+      [ngModel]="search()"
+      (ngModelChange)="search.set($event)"
+      (keydown.enter)="find()"
+    />
+    <mat-icon matSuffix aria-hidden="true">search</mat-icon>
+  </mat-form-field>
+  <button mat-stroked-button type="button" (click)="find()">Search</button>
+  <button mat-flat-button type="button" (click)="openDialog(null)">
+    <mat-icon aria-hidden="true">add</mat-icon>
+    New lot
+  </button>
+</div>
+
+@switch (state().status) {
+  @case ('loading') {
+    <app-loading label="Loading lots" />
+  }
+  @case ('error') {
+    @if (state(); as s) {
+      @if (s.status === 'error') {
+        <app-error-banner [message]="s.message" (retry)="load()" />
+      }
+    }
+  }
+  @case ('ready') {
+    @if (state(); as s) {
+      @if (s.status === 'ready') {
+        @if (s.page.totalCount === 0) {
+          <app-empty-state
+            icon="garage"
+            title="No lots found"
+            [message]="search() ? 'Nothing matches that search.' : 'Create the first lot.'"
+          />
+        } @else {
+          <div class="table-wrap">
+            <table class="data-table">
+              <caption class="visually-hidden">
+                Parking lots
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Lot</th>
+                  <th scope="col" class="num">Levels</th>
+                  <th scope="col" class="num">Spots</th>
+                  <th scope="col">Status</th>
+                  <th scope="col"><span class="visually-hidden">Actions</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (lot of s.page.items; track lot.id) {
+                  <tr>
+                    <th scope="row">
+                      {{ lot.name }}<br /><span class="muted">{{ lot.address }}</span>
+                    </th>
+                    <td class="num">{{ lot.levelCount }}</td>
+                    <td class="num">{{ lot.spotCount }}</td>
+                    <td>
+                      @if (lot.isActive) {
+                        <app-chip label="Open" tone="success" icon="check_circle" />
+                      } @else {
+                        <app-chip label="Closed" tone="neutral" icon="block" />
+                      }
+                    </td>
+                    <td class="actions">
+                      <a
+                        mat-flat-button
+                        [routerLink]="['/admin/lots', lot.id]"
+                        [attr.aria-label]="'Manage levels and spots of ' + lot.name"
+                        >Manage</a
+                      >
+                      <button
+                        mat-icon-button
+                        type="button"
+                        (click)="openDialog(lot)"
+                        [attr.aria-label]="'Edit ' + lot.name"
+                      >
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                      <button
+                        mat-icon-button
+                        type="button"
+                        (click)="toggleActive(lot)"
+                        [attr.aria-label]="(lot.isActive ? 'Close ' : 'Reopen ') + lot.name"
+                      >
+                        <mat-icon>{{ lot.isActive ? 'lock' : 'lock_open' }}</mat-icon>
+                      </button>
+                      <button
+                        mat-icon-button
+                        type="button"
+                        (click)="remove(lot)"
+                        [attr.aria-label]="'Delete ' + lot.name"
+                      >
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <mat-paginator
+            [length]="s.page.totalCount"
+            [pageIndex]="pageIndex()"
+            [pageSize]="pageSize()"
+            [pageSizeOptions]="[10, 25, 50]"
+            (page)="onPage($event)"
+            aria-label="Lots pages"
+          />
+        }
+      }
+    }
+  }
+}

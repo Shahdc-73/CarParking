@@ -69,3 +69,110 @@ a {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ---- shared building blocks ---- */
+.card {
+  padding: 1.25rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 1rem;
+  background: var(--mat-sys-surface-container-lowest);
+
+  > h2:first-child {
+    margin: 0 0 1rem;
+    font: var(--mat-sys-title-large);
+  }
+}
+
+.table-wrap {
+  overflow-x: auto; // wide tables scroll sideways on phones instead of breaking the page
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 1rem;
+  background: var(--mat-sys-surface-container-lowest);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--mat-sys-outline-variant);
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  thead th {
+    background: var(--mat-sys-surface-container-low);
+    color: var(--mat-sys-on-surface-variant);
+    font: var(--mat-sys-label-large);
+    white-space: nowrap;
+  }
+
+  tbody tr:last-child td,
+  tbody tr:last-child th {
+    border-bottom: 0;
+  }
+
+  tbody tr:hover {
+    background: var(--mat-sys-surface-container-low);
+  }
+
+  .num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .actions {
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .muted {
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.toolbar-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+
+  .grow {
+    flex: 1 1 14rem;
+  }
+}
+
+.form-grid {
+  display: grid;
+  gap: 1rem;
+
+  mat-form-field {
+    width: 100%;
+  }
+}
+
+/* Printing a receipt: hide the whole app and show only the dialog's content. */
+@media print {
+  app-root,
+  .cdk-overlay-backdrop,
+  .no-print {
+    display: none !important;
+  }
+
+  .cdk-overlay-container {
+    position: static !important;
+  }
+
+  .cdk-global-overlay-wrapper,
+  .cdk-overlay-pane,
+  .mat-mdc-dialog-container,
+  .mat-mdc-dialog-surface {
+    position: static !important;
+    display: block !important;
+    max-width: none !important;
+    box-shadow: none !important;
+  }
+}

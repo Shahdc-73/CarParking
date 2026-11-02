@@ -1,0 +1,122 @@
+<div class="toolbar-row filters">
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>What changed</mat-label>
+    <mat-select [ngModel]="entityType()" (ngModelChange)="entityType.set($event); apply()">
+      <mat-option value="">Everything</mat-option>
+      @for (t of entityTypes; track t) {
+        <mat-option [value]="t">{{ t }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>Action</mat-label>
+    <mat-select [ngModel]="action()" (ngModelChange)="action.set($event); apply()">
+      <mat-option value="">Any action</mat-option>
+      @for (a of actions; track a) {
+        <mat-option [value]="a">{{ humanize(a) }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>From</mat-label>
+    <input matInput type="date" [ngModel]="from()" (ngModelChange)="from.set($event); apply()" />
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>To (including)</mat-label>
+    <input matInput type="date" [ngModel]="to()" (ngModelChange)="to.set($event); apply()" />
+  </mat-form-field>
+  <button mat-button type="button" (click)="reset()">Clear filters</button>
+</div>
+
+@switch (state().status) {
+  @case ('loading') {
+    <app-loading label="Loading the audit log" />
+  }
+  @case ('error') {
+    @if (state(); as s) {
+      @if (s.status === 'error') {
+        <app-error-banner [message]="s.message" (retry)="load()" />
+      }
+    }
+  }
+  @case ('ready') {
+    @if (state(); as s) {
+      @if (s.status === 'ready') {
+        @if (s.page.totalCount === 0) {
+          <app-empty-state
+            icon="manage_search"
+            title="Nothing recorded"
+            message="No changes match these filters."
+          />
+        } @else {
+          <div class="table-wrap">
+            <table class="data-table">
+              <caption class="visually-hidden">
+                Audit log, newest first
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">When</th>
+                  <th scope="col">Who</th>
+                  <th scope="col">What</th>
+                  <th scope="col">Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (log of s.page.items; track log.id) {
+                  <tr>
+                    <th scope="row" class="when">{{ log.timestampUtc | date: 'medium' }}</th>
+                    <td [attr.title]="log.actorUserId ?? 'Done automatically by the system'">
+                      @if (log.actorUserId) {
+                        <code>{{ short(log.actorUserId) }}</code>
+                      } @else {
+                        <em>System</em>
+                      }
+                    </td>
+                    <td>
+                      {{ humanize(log.action) }}<br />
+                      <span class="muted"
+                        ><code>{{ short(log.entityId) }}</code></span
+                      >
+                    </td>
+                    <td>
+                      @if (log.beforeJson || log.afterJson) {
+                        <details>
+                          <summary>Show changes</summary>
+                          <div class="diff">
+                            @if (log.beforeJson) {
+                              <div>
+                                <h3>Before</h3>
+                                <pre>{{ pretty(log.beforeJson) }}</pre>
+                              </div>
+                            }
+                            @if (log.afterJson) {
+                              <div>
+                                <h3>After</h3>
+                                <pre>{{ pretty(log.afterJson) }}</pre>
+                              </div>
+                            }
+                          </div>
+                        </details>
+                      } @else {
+                        <span class="muted">-</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <mat-paginator
+            [length]="s.page.totalCount"
+            [pageIndex]="pageIndex()"
+            [pageSize]="pageSize()"
+            [pageSizeOptions]="[25, 50, 100]"
+            (page)="onPage($event)"
+            aria-label="Audit log pages"
+          />
+        }
+      }
+    }
+  }
+}

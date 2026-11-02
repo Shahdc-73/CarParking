@@ -1,0 +1,35 @@
+<app-page-header title="Gate" subtitle="Check vehicles in and out.">
+  @if (lots().length > 0) {
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="lot-select">
+      <mat-label>Lot I am staffing</mat-label>
+      <mat-select [ngModel]="lotId()" (ngModelChange)="lotId.set($event)">
+        @for (lot of lots(); track lot.id) {
+          <mat-option [value]="lot.id">{{ lot.name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  }
+</app-page-header>
+
+@if (loading()) {
+  <app-loading label="Loading lots" />
+} @else if (error(); as message) {
+  <app-error-banner [message]="message" (retry)="loadLots()" />
+} @else if (lotId(); as id) {
+  <div class="gate">
+    <app-check-in-card [lotId]="id" (checkedIn)="refresh()" />
+    <app-parked-list
+      [lotId]="id"
+      [refreshKey]="refreshKey()"
+      (checkOut)="openCheckOut($event)"
+      (lostTicket)="openLostTicket($event)"
+      (ticketFound)="openCheckOut($event)"
+    />
+  </div>
+} @else {
+  <app-empty-state
+    icon="garage"
+    title="No open lots"
+    message="There is no open lot to staff. An administrator needs to open one."
+  />
+}

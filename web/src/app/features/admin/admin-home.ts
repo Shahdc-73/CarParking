@@ -1,37 +1,47 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { FeaturePlaceholder, PlannedFeature } from '../../shared/ui/feature-placeholder';
+import { MatTabsModule } from '@angular/material/tabs';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { PageHeader } from '../../shared/ui/page-header';
 
+/** The admin area: one tab per concern. Each tab is a real route (so links and reload work). */
 @Component({
   selector: 'app-admin-home',
-  imports: [FeaturePlaceholder],
-  template: `<app-feature-placeholder
-    title="Administration"
-    intro="Manage lots, pricing and users, and see reports."
-    [items]="items"
-  />`,
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatTabsModule, PageHeader],
+  template: `
+    <app-page-header
+      title="Administration"
+      subtitle="Manage lots, pricing and users, and review changes."
+    />
+
+    <nav mat-tab-nav-bar [tabPanel]="panel" aria-label="Administration sections">
+      @for (tab of tabs; track tab.path) {
+        <a
+          mat-tab-link
+          [routerLink]="tab.path"
+          routerLinkActive
+          #active="routerLinkActive"
+          [active]="active.isActive"
+          >{{ tab.label }}</a
+        >
+      }
+    </nav>
+    <mat-tab-nav-panel #panel class="panel">
+      <router-outlet />
+    </mat-tab-nav-panel>
+  `,
+  styles: `
+    .panel {
+      display: block;
+      padding-top: 1.5rem;
+    }
+  `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdminHome {
-  protected readonly items: PlannedFeature[] = [
-    {
-      icon: 'warehouse',
-      title: 'Lots and spots',
-      description: 'Add lots, levels and spots, and take spots out of service.',
-    },
-    {
-      icon: 'payments',
-      title: 'Pricing',
-      description: 'Hourly rates, daily caps, free minutes and the lost-ticket fee.',
-    },
-    {
-      icon: 'group',
-      title: 'Users',
-      description: 'Create attendants and admins, and deactivate accounts.',
-    },
-    {
-      icon: 'monitoring',
-      title: 'Reports and audit log',
-      description: 'Occupancy, revenue, peak hours, and who changed what.',
-    },
+  protected readonly tabs = [
+    { path: 'lots', label: 'Lots and spots' },
+    { path: 'pricing', label: 'Pricing' },
+    { path: 'users', label: 'Users' },
+    { path: 'audit', label: 'Audit log' },
   ];
 }

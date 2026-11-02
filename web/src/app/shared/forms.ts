@@ -1,4 +1,12 @@
-import { AbstractControl, FormGroup, ValidationErrors, ValidatorFn } from '@angular/forms';
+import {
+  AbstractControl,
+  FormGroup,
+  FormGroupDirective,
+  NgForm,
+  ValidationErrors,
+  ValidatorFn,
+} from '@angular/forms';
+import { ErrorStateMatcher } from '@angular/material/core';
 
 /**
  * Mirrors the backend password rules (8+ chars, upper, lower, digit) so people see the problem while typing instead of after
@@ -30,3 +38,29 @@ export function applyFieldErrors(form: FormGroup, fieldErrors: Record<string, st
   }
   return applied;
 }
+
+/** Plate numbers: 2-10 letters/digits once spaces and dashes are ignored (same rule as the API). */
+export const plateNumber: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
+  const value = ((control.value as string) ?? '').trim();
+  if (!value) return null; // `required` reports an empty value
+  const stripped = value.replace(/[\s-]/g, '');
+  return /^[A-Za-z0-9]{2,10}$/.test(stripped) ? null : { plate: true };
+};
+
+/**
+ * Material's default shows an error as soon as a required field is merely visited and left empty. For a field that is
+ * deliberately left empty between tasks (the gate's plate box) that is noise. Show errors only once the user typed something
+ * or tried to submit.
+ */
+export class DirtyOrSubmittedErrorMatcher implements ErrorStateMatcher {
+  isErrorState(control: AbstractControl | null, form: FormGroupDirective | NgForm | null): boolean {
+    return !!(control && control.invalid && (control.dirty || form?.submitted));
+  }
+}
+
+/** At most 2 decimal places (money). Works around 0.1 + 0.2 style float noise by comparing in cents. */
+export const twoDecimals: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
+  const value = control.value as number | null;
+  if (value === null || value === undefined || Number.isNaN(value)) return null;
+  return Math.abs(value * 100 - Math.round(value * 100)) < 1e-6 ? null : { decimals: true };
+};

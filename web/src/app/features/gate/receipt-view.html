@@ -1,0 +1,62 @@
+@let r = receipt();
+<article class="receipt" aria-label="Receipt {{ r.number }}">
+  <header>
+    <mat-icon aria-hidden="true">receipt_long</mat-icon>
+    <div>
+      <h3>ParkWise receipt</h3>
+      <p class="number">{{ r.number }}</p>
+    </div>
+  </header>
+
+  <dl>
+    <div>
+      <dt>Vehicle</dt>
+      <dd class="plate">{{ r.plateNumber }}</dd>
+    </div>
+    <div>
+      <dt>Ticket</dt>
+      <dd>{{ r.ticketCode }}</dd>
+    </div>
+    <div>
+      <dt>Parked at</dt>
+      <dd>{{ r.lotName }}, level {{ r.levelNumber }}, spot {{ r.spotCode }}</dd>
+    </div>
+    <div>
+      <dt>Check-in</dt>
+      <dd>{{ r.checkInAtUtc | date: 'medium' }}</dd>
+    </div>
+    <div>
+      <dt>Check-out</dt>
+      <dd>{{ r.checkOutAtUtc | date: 'medium' }}</dd>
+    </div>
+    <div>
+      <dt>Time parked</dt>
+      <dd class="num">{{ duration() }}</dd>
+    </div>
+  </dl>
+
+  <section class="how" aria-label="How the fee was calculated">
+    @if (r.breakdown.isLostTicket) {
+      <p>Lost ticket: a flat fee replaces the normal fee.</p>
+    } @else if (r.breakdown.billedHours === 0) {
+      <p>Within the free period ({{ r.breakdown.freeMinutes }} minutes): nothing to pay.</p>
+    } @else {
+      <p>
+        {{ r.breakdown.billedHours }} started
+        {{ r.breakdown.billedHours === 1 ? 'hour' : 'hours' }} at
+        {{ r.breakdown.hourlyRate | number: '1.2-2' }} an hour, after
+        {{ r.breakdown.freeMinutes }} free minutes.
+        @if (r.breakdown.daysCapped > 0) {
+          The daily cap of {{ r.breakdown.dailyCap | number: '1.2-2' }} applied
+          {{ r.breakdown.daysCapped === 1 ? 'once' : r.breakdown.daysCapped + ' times' }}.
+        }
+      </p>
+    }
+  </section>
+
+  <footer>
+    <span>Total paid ({{ r.paymentMethod }})</span>
+    <strong class="total">{{ r.amount | number: '1.2-2' }}</strong>
+  </footer>
+  <p class="issued">Issued {{ r.issuedAtUtc | date: 'medium' }}</p>
+</article>

@@ -1,0 +1,127 @@
+<section class="card">
+  <div class="head">
+    <h2>
+      Parked now
+      @if (state().status === 'ready') {
+        <span class="count">{{ total() }}</span>
+      }
+    </h2>
+    <button
+      mat-icon-button
+      type="button"
+      aria-label="Refresh the list"
+      (click)="load()"
+      [disabled]="refreshing() || state().status === 'loading'"
+    >
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </div>
+
+  <mat-form-field appearance="outline" subscriptSizing="dynamic" class="search">
+    <mat-label>Find by plate, spot, or ticket code</mat-label>
+    <input
+      matInput
+      type="search"
+      autocomplete="off"
+      spellcheck="false"
+      placeholder="ABC123, D1-07 or PW-K7M2QX"
+      [ngModel]="query()"
+      (ngModelChange)="query.set($event)"
+      (keydown.enter)="search()"
+    />
+    <mat-icon matSuffix aria-hidden="true">search</mat-icon>
+    <mat-hint>Press Enter after a ticket code.</mat-hint>
+  </mat-form-field>
+
+  @switch (state().status) {
+    @case ('loading') {
+      <app-loading label="Loading parked vehicles" />
+    }
+    @case ('error') {
+      @if (state(); as s) {
+        @if (s.status === 'error') {
+          <app-error-banner [message]="s.message" (retry)="load()" />
+        }
+      }
+    }
+    @case ('ready') {
+      @if (refreshError(); as problem) {
+        <app-error-banner
+          [message]="'Could not refresh: ' + problem + ' Showing the last data.'"
+          (retry)="load()"
+        />
+      }
+
+      @if (total() === 0) {
+        <app-empty-state
+          icon="garage"
+          title="No vehicles parked"
+          message="Checked-in vehicles will appear here."
+        />
+      } @else if (visible().length === 0) {
+        <app-empty-state
+          icon="search_off"
+          title="No match"
+          message="No parked vehicle matches that search."
+        />
+      } @else {
+        <div class="table-wrap">
+          <table class="data-table">
+            <caption class="visually-hidden">
+              Vehicles currently parked, longest first
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Vehicle</th>
+                <th scope="col">Spot</th>
+                <th scope="col">Parked for</th>
+                <th scope="col" class="num">Fee so far</th>
+                <th scope="col"><span class="visually-hidden">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of visible(); track c.sessionId) {
+                <tr>
+                  <th scope="row" class="plate">{{ c.plateNumber }}</th>
+                  <td class="nowrap">{{ c.spotCode }}</td>
+                  <td>
+                    <span class="clock" [attr.aria-label]="spoken(c)">{{
+                      formatElapsed(elapsed(c))
+                    }}</span>
+                  </td>
+                  <td class="num nowrap">
+                    @if (freeLeft(c) > 0) {
+                      <span class="free">Free for {{ formatElapsed(freeLeft(c)) }}</span>
+                    } @else if (c.occupancy.feeSoFar !== null) {
+                      {{ c.occupancy.feeSoFar | number: '1.2-2' }}
+                    } @else {
+                      <span class="muted">-</span>
+                    }
+                  </td>
+                  <td class="actions">
+                    <button
+                      mat-flat-button
+                      type="button"
+                      (click)="checkOut.emit(c)"
+                      [attr.aria-label]="'Check out ' + c.plateNumber"
+                    >
+                      Check out
+                    </button>
+                    <button
+                      mat-button
+                      type="button"
+                      (click)="lostTicket.emit(c)"
+                      [attr.aria-label]="'Lost ticket for ' + c.plateNumber"
+                    >
+                      Lost ticket
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
+  }
+</section>

@@ -1,0 +1,125 @@
+<h2 mat-dialog-title>New reservation</h2>
+
+@if (loading()) {
+  <mat-dialog-content><app-loading label="Loading" /></mat-dialog-content>
+} @else if (loadError(); as message) {
+  <mat-dialog-content
+    ><app-error-banner [message]="message" (retry)="loadChoices()"
+  /></mat-dialog-content>
+  <mat-dialog-actions align="end"
+    ><button mat-button type="button" mat-dialog-close>Close</button></mat-dialog-actions
+  >
+} @else if (vehicles().length === 0) {
+  <mat-dialog-content>
+    <p>You need a vehicle before you can reserve a spot.</p>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close>Close</button>
+    <a mat-flat-button routerLink="/my/vehicles" mat-dialog-close>Add a vehicle</a>
+  </mat-dialog-actions>
+} @else {
+  <form [formGroup]="form" (ngSubmit)="reserve()" novalidate>
+    <mat-dialog-content class="form-grid">
+      @if (error(); as message) {
+        <app-error-banner [message]="message" [retryable]="false" />
+      }
+
+      <mat-form-field appearance="outline">
+        <mat-label>Parking lot</mat-label>
+        <mat-select formControlName="lotId" required>
+          @for (lot of lots(); track lot.id) {
+            <mat-option [value]="lot.id">{{ lot.name }}</mat-option>
+          }
+        </mat-select>
+        @if (form.controls.lotId.touched && form.controls.lotId.invalid) {
+          <mat-error>Choose a lot.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Vehicle</mat-label>
+        <mat-select formControlName="vehicleId" required>
+          @for (v of vehicles(); track v.id) {
+            <mat-option [value]="v.id">{{ v.plateNumber }}</mat-option>
+          }
+        </mat-select>
+        @if (form.controls.vehicleId.touched && form.controls.vehicleId.invalid) {
+          <mat-error>Choose a vehicle.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Spot type</mat-label>
+        <mat-select formControlName="spotType" required>
+          @for (t of spotTypes; track t) {
+            <mat-option [value]="t"
+              ><mat-icon aria-hidden="true">{{ typeIcon(t) }}</mat-icon> {{ t }}</mat-option
+            >
+          }
+        </mat-select>
+        <mat-hint>Your vehicle can only use spot types that suit it.</mat-hint>
+      </mat-form-field>
+
+      <div class="when">
+        <mat-form-field appearance="outline">
+          <mat-label>Arrival</mat-label>
+          <input matInput type="datetime-local" formControlName="start" [min]="minStart" required />
+          @if (form.controls.start.hasError('past')) {
+            <mat-error>The arrival time is in the past.</mat-error>
+          } @else if (form.controls.start.hasError('required')) {
+            <mat-error>Choose when you arrive.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>For</mat-label>
+          <mat-select formControlName="durationMinutes">
+            @for (d of durations; track d.minutes) {
+              <mat-option [value]="d.minutes">{{ d.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <p class="availability" role="status" [attr.data-state]="availability().state">
+        @switch (availability().state) {
+          @case ('checking') {
+            <mat-icon aria-hidden="true">hourglass_empty</mat-icon> Checking availability...
+          }
+          @case ('ready') {
+            @if (availability(); as a) {
+              @if (a.state === 'ready' && a.spots > 0) {
+                <mat-icon aria-hidden="true">check_circle</mat-icon>
+                {{ a.spots }} {{ a.spots === 1 ? 'spot is' : 'spots are' }} free for that time.
+              } @else {
+                <mat-icon aria-hidden="true">block</mat-icon> No spot of this type is free then. Try
+                another time or type.
+              }
+            }
+          }
+          @case ('error') {
+            @if (availability(); as a) {
+              @if (a.state === 'error') {
+                <mat-icon aria-hidden="true">error</mat-icon> {{ a.message }}
+              }
+            }
+          }
+        }
+      </p>
+      <p class="hold">
+        Your spot is held for 15 minutes after the arrival time. After that it is released.
+      </p>
+    </mat-dialog-content>
+
+    <mat-dialog-actions align="end">
+      <button mat-button type="button" mat-dialog-close [disabled]="saving()">Cancel</button>
+      <button mat-flat-button type="submit" [disabled]="saving()" [attr.aria-busy]="saving()">
+        @if (saving()) {
+          <mat-spinner diameter="20" aria-label="Reserving" />
+        } @else {
+          Reserve
+        }
+      </button>
+    </mat-dialog-actions>
+  </form>
+}

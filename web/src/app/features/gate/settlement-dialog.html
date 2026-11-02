@@ -1,0 +1,110 @@
+<h2 mat-dialog-title>
+  @if (step() === 'done') {
+    {{ data.mode === 'lost-ticket' ? 'Lost ticket settled' : 'Checked out' }}
+  } @else {
+    {{ data.mode === 'lost-ticket' ? 'Lost ticket' : 'Check out' }}: {{ data.plateNumber }}
+  }
+</h2>
+
+<mat-dialog-content>
+  @switch (step()) {
+    @case ('loading') {
+      <app-loading label="Calculating the fee" />
+    }
+    @case ('error') {
+      <app-error-banner [message]="error()!" (retry)="load()" />
+    }
+    @case ('done') {
+      @if (result(); as r) {
+        @if (r.replayed) {
+          <p class="note" role="status">
+            This vehicle was already checked out. Showing the existing receipt: nothing was charged
+            again.
+          </p>
+        }
+        <app-receipt-view [receipt]="r.receipt" />
+      }
+    }
+    @default {
+      @if (error(); as message) {
+        <app-error-banner [message]="message" [retryable]="false" />
+      }
+
+      @if (data.mode === 'check-out') {
+        @if (preview(); as p) {
+          <p class="where">Spot {{ data.spotCode }}</p>
+          <dl class="summary">
+            <div>
+              <dt>Time parked</dt>
+              <dd class="num">{{ formatElapsed(parseTimeSpan(p.breakdown.duration)) }}</dd>
+            </div>
+            <div>
+              <dt>Billed</dt>
+              <dd>
+                @if (p.breakdown.billedHours === 0) {
+                  Free period ({{ p.breakdown.freeMinutes }} min)
+                } @else {
+                  {{ p.breakdown.billedHours }} started
+                  {{ p.breakdown.billedHours === 1 ? 'hour' : 'hours' }} at
+                  {{ p.breakdown.hourlyRate | number: '1.2-2' }}
+                  @if (p.breakdown.daysCapped > 0) {
+                    <span class="cap">daily cap applied</span>
+                  }
+                }
+              </dd>
+            </div>
+          </dl>
+          <div class="amount" aria-live="polite">
+            <span>Amount to pay</span>
+            <strong>{{ p.amount | number: '1.2-2' }}</strong>
+          </div>
+        }
+      } @else {
+        <p>
+          The driver lost the ticket. A <strong>flat fee</strong> replaces the normal parking fee,
+          whatever the stay length.
+        </p>
+        <div class="amount">
+          <span>Lost-ticket fee</span>
+          @if (lostTicketFee() !== null) {
+            <strong>{{ lostTicketFee() | number: '1.2-2' }}</strong>
+          } @else {
+            <strong>Not set</strong>
+          }
+        </div>
+      }
+    }
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  @if (step() === 'done') {
+    <button mat-button type="button" (click)="print()">
+      <mat-icon aria-hidden="true">print</mat-icon>
+      Print receipt
+    </button>
+    <button mat-flat-button type="button" (click)="close()" cdkFocusInitial>Done</button>
+  } @else {
+    <button mat-button type="button" (click)="close()" [disabled]="step() === 'paying'">
+      Cancel
+    </button>
+    @if (step() === 'review' || step() === 'paying') {
+      <button
+        mat-flat-button
+        type="button"
+        (click)="pay()"
+        [disabled]="
+          step() === 'paying' || (data.mode === 'lost-ticket' && lostTicketFee() === null)
+        "
+        [attr.aria-busy]="step() === 'paying'"
+        cdkFocusInitial
+      >
+        @if (step() === 'paying') {
+          <mat-spinner diameter="20" aria-label="Taking payment" />
+        } @else {
+          Take payment and {{ data.mode === 'lost-ticket' ? 'close' : 'check out' }}
+        }
+      </button>
+    }
+  }
+</mat-dialog-actions>

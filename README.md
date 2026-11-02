@@ -9,7 +9,7 @@ docker compose up --build     # API on http://localhost:5080 (/swagger, /health,
 dotnet test                   # needs Docker: integration tests start a SQL Server container
 ```
 
-Open the app at http://localhost:4200 (Swagger at http://localhost:5080/swagger).
+Open the app at http://localhost:4200. Attendants use **Gate**, drivers use **My parking**, admins use **Administration** (Swagger at http://localhost:5080/swagger).
 
 Demo users (password = your `SEED_PASSWORD`): `admin@`, `attendant@`, `driver1@`, `driver2@` + `parkwise.local`.
 

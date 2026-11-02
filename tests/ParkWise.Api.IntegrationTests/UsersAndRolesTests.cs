@@ -105,6 +105,23 @@ public class UsersAndRolesTests(ApiFactory factory)
     }
 
     [Fact]
+    public async Task An_admin_cannot_deactivate_their_own_account_but_can_deactivate_other_admins()
+    {
+        var admin = await AdminClientAsync();
+        var me = await (await admin.GetAsync("/api/v1/auth/me")).ReadAsync<UserDto>();
+
+        var self = await admin.PutJsonAsync($"/api/v1/users/{me.Id}/active", new { isActive = false });
+        Assert.Equal(HttpStatusCode.Conflict, self.StatusCode);
+        Assert.Equal("users.cannot_deactivate_self", await ProblemCodeAsync(self));
+        Assert.Equal(HttpStatusCode.OK, (await admin.GetAsync("/api/v1/auth/me")).StatusCode); // still signed in and active
+
+        // Another admin can be deactivated, and re-activating yourself is harmless.
+        var other = await (await admin.PostJsonAsync("/api/v1/users", new CreateUserRequest(NewEmail(), StrongPassword, "Other Admin", Roles.Admin))).ReadAsync<UserDto>();
+        Assert.Equal(HttpStatusCode.NoContent, (await admin.PutJsonAsync($"/api/v1/users/{other.Id}/active", new { isActive = false })).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await admin.PutJsonAsync($"/api/v1/users/{me.Id}/active", new { isActive = true })).StatusCode);
+    }
+
+    [Fact]
     public async Task Deactivating_an_unknown_user_returns_404()
     {
         var admin = await AdminClientAsync();

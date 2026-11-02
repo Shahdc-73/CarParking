@@ -1,0 +1,162 @@
+<a class="back" routerLink="/admin/lots">
+  <mat-icon aria-hidden="true">arrow_back</mat-icon>
+  All lots
+</a>
+
+@switch (state().status) {
+  @case ('loading') {
+    <app-loading label="Loading lot" />
+  }
+  @case ('error') {
+    @if (state(); as s) {
+      @if (s.status === 'error') {
+        <app-error-banner [message]="s.message" (retry)="load()" />
+      }
+    }
+  }
+  @case ('ready') {
+    @if (state(); as s) {
+      @if (s.status === 'ready') {
+        @let d = s.detail;
+        <app-page-header [title]="d.name" [subtitle]="d.address">
+          @if (d.isActive) {
+            <app-chip label="Open" tone="success" icon="check_circle" />
+          } @else {
+            <app-chip label="Closed" tone="neutral" icon="block" />
+          }
+          <button mat-stroked-button type="button" (click)="editLot(d)">
+            <mat-icon aria-hidden="true">edit</mat-icon>
+            Edit lot
+          </button>
+          <button mat-flat-button type="button" (click)="addLevel(d)">
+            <mat-icon aria-hidden="true">add</mat-icon>
+            Add level
+          </button>
+        </app-page-header>
+
+        @if (d.levels.length === 0) {
+          <app-empty-state
+            icon="layers"
+            title="No levels yet"
+            message="Add a level, then add spots to it."
+          />
+        }
+
+        @for (level of d.levels; track level.id) {
+          <section class="level card" [attr.aria-labelledby]="'lvl-' + level.id">
+            <header>
+              <h2 [id]="'lvl-' + level.id">
+                {{ level.name }}
+                <span class="muted"
+                  >Level {{ level.number }} · {{ level.spotCount }}
+                  {{ level.spotCount === 1 ? 'spot' : 'spots' }}</span
+                >
+              </h2>
+              <div class="level-actions">
+                <button mat-stroked-button type="button" (click)="addSpot(level)">
+                  <mat-icon aria-hidden="true">add</mat-icon>
+                  Add spot
+                </button>
+                <button
+                  mat-icon-button
+                  type="button"
+                  (click)="renameLevel(level)"
+                  [attr.aria-label]="'Rename level ' + level.name"
+                >
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  type="button"
+                  (click)="deleteLevel(level)"
+                  [attr.aria-label]="'Delete level ' + level.name"
+                >
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            </header>
+
+            @let spots = spotsOf(s.board, level.id);
+            @if (spots.length === 0) {
+              <p class="empty">No spots on this level yet.</p>
+            } @else {
+              <div class="table-wrap">
+                <table class="data-table">
+                  <caption class="visually-hidden">
+                    Spots on
+                    {{
+                      level.name
+                    }}
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Spot</th>
+                      <th scope="col">Type</th>
+                      <th scope="col">Status</th>
+                      <th scope="col"><span class="visually-hidden">Actions</span></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (spot of spots; track spot.id) {
+                      <tr>
+                        <th scope="row" class="code">{{ spot.code }}</th>
+                        <td>
+                          <span class="type"
+                            ><mat-icon aria-hidden="true">{{ typeIcon(spot.type) }}</mat-icon
+                            >{{ spot.type }}</span
+                          >
+                        </td>
+                        <td>
+                          <app-chip
+                            [label]="statusView[spot.status].label"
+                            [tone]="statusView[spot.status].tone"
+                            [icon]="statusView[spot.status].icon"
+                          />
+                        </td>
+                        <td class="actions">
+                          <button
+                            mat-icon-button
+                            type="button"
+                            (click)="editSpot(spot)"
+                            [attr.aria-label]="'Edit spot ' + spot.code"
+                          >
+                            <mat-icon>edit</mat-icon>
+                          </button>
+                          <button
+                            mat-button
+                            type="button"
+                            (click)="toggleService(spot)"
+                            [disabled]="spot.status === 'Occupied' || spot.status === 'Reserved'"
+                            [attr.aria-label]="
+                              (spot.status === 'OutOfService'
+                                ? 'Return spot '
+                                : 'Take out of service spot ') + spot.code
+                            "
+                          >
+                            {{
+                              spot.status === 'OutOfService'
+                                ? 'Return to service'
+                                : 'Take out of service'
+                            }}
+                          </button>
+                          <button
+                            mat-icon-button
+                            type="button"
+                            (click)="deleteSpot(spot)"
+                            [attr.aria-label]="'Delete spot ' + spot.code"
+                          >
+                            <mat-icon>delete</mat-icon>
+                          </button>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </section>
+        }
+      }
+    }
+  }
+}

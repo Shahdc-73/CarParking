@@ -1,0 +1,13 @@
+.lot-select {
+  min-width: 16rem;
+}
+
+.gate {
+  display: grid;
+  gap: 1.5rem;
+  align-items: start;
+
+  @media (min-width: 1100px) {
+    grid-template-columns: minmax(20rem, 24rem) 1fr;
+  }
+}

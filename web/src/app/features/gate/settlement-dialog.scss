@@ -1,0 +1,58 @@
+.where {
+  margin: 0 0 0.75rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.summary {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0 0 1.25rem;
+
+  div {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  dt {
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  dd {
+    margin: 0;
+    text-align: right;
+  }
+
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .cap {
+    display: block;
+    color: var(--mat-sys-on-surface-variant);
+    font: var(--mat-sys-body-small);
+  }
+}
+
+.amount {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+
+  strong {
+    font: var(--mat-sys-display-small);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.note {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: var(--pw-reserved-bg);
+  color: var(--pw-reserved-fg);
+}

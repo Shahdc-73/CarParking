@@ -1,0 +1,116 @@
+<div class="toolbar-row">
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>Show</mat-label>
+    <mat-select [ngModel]="statusFilter()" (ngModelChange)="setFilter($event)">
+      <mat-option value="">All reservations</mat-option>
+      @for (s of statuses; track s) {
+        <mat-option [value]="s">{{ view[s].label }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <span class="grow"></span>
+  <button mat-flat-button type="button" (click)="create()">
+    <mat-icon aria-hidden="true">add</mat-icon>
+    New reservation
+  </button>
+</div>
+
+@switch (state().status) {
+  @case ('loading') {
+    <app-loading label="Loading your reservations" />
+  }
+  @case ('error') {
+    @if (state(); as s) {
+      @if (s.status === 'error') {
+        <app-error-banner [message]="s.message" (retry)="load()" />
+      }
+    }
+  }
+  @case ('ready') {
+    @if (state(); as s) {
+      @if (s.status === 'ready') {
+        @if (s.page.totalCount === 0) {
+          <app-empty-state
+            icon="event_available"
+            title="No reservations"
+            [message]="
+              statusFilter()
+                ? 'Nothing matches this filter.'
+                : 'Reserve a spot to be sure there is room when you arrive.'
+            "
+          />
+        } @else {
+          <div class="table-wrap">
+            <table class="data-table">
+              <caption class="visually-hidden">
+                Your reservations, newest first
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">When</th>
+                  <th scope="col">Where</th>
+                  <th scope="col">Vehicle</th>
+                  <th scope="col">Status</th>
+                  <th scope="col"><span class="visually-hidden">Actions</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (r of s.page.items; track r.id) {
+                  <tr>
+                    <th scope="row">
+                      {{ r.startUtc | date: 'EEE d MMM, h:mm a' }} to
+                      {{
+                        r.endUtc
+                          | date: (sameDay(r.startUtc, r.endUtc) ? 'h:mm a' : 'EEE d MMM, h:mm a')
+                      }}
+                    </th>
+                    <td>
+                      {{ r.lotName }}<br /><span class="muted"
+                        >Level {{ r.levelNumber }}, spot {{ r.spotCode }}</span
+                      >
+                    </td>
+                    <td>{{ r.plateNumber }}</td>
+                    <td>
+                      <app-chip
+                        [label]="view[r.status].label"
+                        [tone]="view[r.status].tone"
+                        [icon]="view[r.status].icon"
+                      />
+                      @if (r.status === 'Pending') {
+                        <br /><span class="muted"
+                          >Held until {{ r.holdExpiresAtUtc | date: 'h:mm a' }}</span
+                        >
+                      }
+                    </td>
+                    <td class="actions">
+                      @if (r.status === 'Pending') {
+                        <button
+                          mat-button
+                          type="button"
+                          (click)="cancel(r)"
+                          [attr.aria-label]="
+                            'Cancel reservation at ' + r.lotName + ' spot ' + r.spotCode
+                          "
+                        >
+                          Cancel
+                        </button>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <mat-paginator
+            [length]="s.page.totalCount"
+            [pageIndex]="pageIndex()"
+            [pageSize]="pageSize()"
+            [pageSizeOptions]="[10, 25, 50]"
+            (page)="onPage($event)"
+            aria-label="Reservations pages"
+          />
+        }
+      }
+    }
+  }
+}

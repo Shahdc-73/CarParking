@@ -1,0 +1,117 @@
+<div class="toolbar-row">
+  <mat-form-field appearance="outline" subscriptSizing="dynamic" class="grow">
+    <mat-label>Search by name or email</mat-label>
+    <input
+      matInput
+      type="search"
+      autocomplete="off"
+      [ngModel]="search()"
+      (ngModelChange)="search.set($event)"
+      (keydown.enter)="find()"
+    />
+    <mat-icon matSuffix aria-hidden="true">search</mat-icon>
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>Role</mat-label>
+    <mat-select [ngModel]="role()" (ngModelChange)="role.set($event); find()">
+      <mat-option value="">All roles</mat-option>
+      @for (r of roles; track r.value) {
+        <mat-option [value]="r.value">{{ r.label }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <button mat-stroked-button type="button" (click)="find()">Search</button>
+  <button mat-flat-button type="button" (click)="create()">
+    <mat-icon aria-hidden="true">person_add</mat-icon>
+    New user
+  </button>
+</div>
+
+@switch (state().status) {
+  @case ('loading') {
+    <app-loading label="Loading users" />
+  }
+  @case ('error') {
+    @if (state(); as s) {
+      @if (s.status === 'error') {
+        <app-error-banner [message]="s.message" (retry)="load()" />
+      }
+    }
+  }
+  @case ('ready') {
+    @if (state(); as s) {
+      @if (s.status === 'ready') {
+        @if (s.page.totalCount === 0) {
+          <app-empty-state
+            icon="group"
+            title="No users found"
+            message="Nothing matches that search."
+          />
+        } @else {
+          <div class="table-wrap">
+            <table class="data-table">
+              <caption class="visually-hidden">
+                Users
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">User</th>
+                  <th scope="col">Role</th>
+                  <th scope="col">Status</th>
+                  <th scope="col"><span class="visually-hidden">Actions</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (u of s.page.items; track u.id) {
+                  <tr>
+                    <th scope="row">
+                      {{ u.fullName }}
+                      @if (u.id === me()?.id) {
+                        <span class="muted">(you)</span>
+                      }
+                      <br /><span class="muted">{{ u.email }}</span>
+                    </th>
+                    <td>{{ u.roles.join(', ') }}</td>
+                    <td>
+                      @if (u.isActive) {
+                        <app-chip label="Active" tone="success" icon="check_circle" />
+                      } @else {
+                        <app-chip label="Deactivated" tone="neutral" icon="block" />
+                      }
+                    </td>
+                    <td class="actions">
+                      <button
+                        mat-button
+                        type="button"
+                        (click)="toggle(u)"
+                        [disabled]="u.id === me()?.id && u.isActive"
+                        [attr.title]="
+                          u.id === me()?.id && u.isActive
+                            ? 'You cannot deactivate your own account.'
+                            : null
+                        "
+                        [attr.aria-label]="
+                          (u.isActive ? 'Deactivate ' : 'Reactivate ') + u.fullName
+                        "
+                      >
+                        {{ u.isActive ? 'Deactivate' : 'Reactivate' }}
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <mat-paginator
+            [length]="s.page.totalCount"
+            [pageIndex]="pageIndex()"
+            [pageSize]="pageSize()"
+            [pageSizeOptions]="[10, 25, 50]"
+            (page)="onPage($event)"
+            aria-label="Users pages"
+          />
+        }
+      }
+    }
+  }
+}

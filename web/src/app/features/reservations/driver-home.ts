@@ -1,32 +1,46 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { FeaturePlaceholder, PlannedFeature } from '../../shared/ui/feature-placeholder';
+import { MatTabsModule } from '@angular/material/tabs';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { PageHeader } from '../../shared/ui/page-header';
 
+/** The driver's area: three sections behind a tab bar. Each tab is a real route, so links, back button and reload all work. */
 @Component({
   selector: 'app-driver-home',
-  imports: [FeaturePlaceholder],
-  template: `<app-feature-placeholder
-    title="My parking"
-    intro="Your vehicles, reservations and parking history."
-    [items]="items"
-  />`,
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatTabsModule, PageHeader],
+  template: `
+    <app-page-header
+      title="My parking"
+      subtitle="Your vehicles, reservations and parking history."
+    />
+
+    <nav mat-tab-nav-bar [tabPanel]="panel" aria-label="My parking sections">
+      @for (tab of tabs; track tab.path) {
+        <a
+          mat-tab-link
+          [routerLink]="tab.path"
+          routerLinkActive
+          #active="routerLinkActive"
+          [active]="active.isActive"
+          >{{ tab.label }}</a
+        >
+      }
+    </nav>
+    <mat-tab-nav-panel #panel class="panel">
+      <router-outlet />
+    </mat-tab-nav-panel>
+  `,
+  styles: `
+    .panel {
+      display: block;
+      padding-top: 1.5rem;
+    }
+  `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DriverHome {
-  protected readonly items: PlannedFeature[] = [
-    {
-      icon: 'directions_car',
-      title: 'My vehicles',
-      description: 'Register the cars and motorcycles you park.',
-    },
-    {
-      icon: 'event_available',
-      title: 'Reservations',
-      description: 'Reserve a spot for a time window and cancel if plans change.',
-    },
-    {
-      icon: 'receipt_long',
-      title: 'History and receipts',
-      description: 'Past visits, what you paid, and a receipt for each.',
-    },
+  protected readonly tabs = [
+    { path: 'vehicles', label: 'My vehicles' },
+    { path: 'reservations', label: 'Reservations' },
+    { path: 'history', label: 'History' },
   ];
 }

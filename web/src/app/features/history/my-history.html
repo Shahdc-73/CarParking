@@ -1,0 +1,109 @@
+<div class="toolbar-row">
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>Show</mat-label>
+    <mat-select [ngModel]="statusFilter()" (ngModelChange)="setFilter($event)">
+      <mat-option value="">All visits</mat-option>
+      @for (s of statuses; track s) {
+        <mat-option [value]="s">{{ view[s].label }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+</div>
+
+@switch (state().status) {
+  @case ('loading') {
+    <app-loading label="Loading your parking history" />
+  }
+  @case ('error') {
+    @if (state(); as s) {
+      @if (s.status === 'error') {
+        <app-error-banner [message]="s.message" (retry)="load()" />
+      }
+    }
+  }
+  @case ('ready') {
+    @if (state(); as s) {
+      @if (s.status === 'ready') {
+        @if (s.page.totalCount === 0) {
+          <app-empty-state
+            icon="receipt_long"
+            title="No parking visits yet"
+            [message]="
+              statusFilter()
+                ? 'Nothing matches this filter.'
+                : 'Your visits and receipts will appear here.'
+            "
+          />
+        } @else {
+          <div class="table-wrap">
+            <table class="data-table">
+              <caption class="visually-hidden">
+                Your parking visits, newest first
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Arrived</th>
+                  <th scope="col">Where</th>
+                  <th scope="col">Vehicle</th>
+                  <th scope="col">Time parked</th>
+                  <th scope="col" class="num">Paid</th>
+                  <th scope="col">Status</th>
+                  <th scope="col"><span class="visually-hidden">Receipt</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (v of s.page.items; track v.id) {
+                  <tr>
+                    <th scope="row">{{ v.checkInAtUtc | date: 'EEE d MMM y, h:mm a' }}</th>
+                    <td>
+                      {{ v.lotName }}<br /><span class="muted"
+                        >Level {{ v.levelNumber }}, spot {{ v.spotCode }}</span
+                      >
+                    </td>
+                    <td>{{ v.plateNumber }}</td>
+                    <td>{{ duration(v) || 'Still parked' }}</td>
+                    <td class="num">
+                      {{ v.amountPaid === null ? '-' : (v.amountPaid | number: '1.2-2') }}
+                    </td>
+                    <td>
+                      <app-chip
+                        [label]="view[v.status].label"
+                        [tone]="view[v.status].tone"
+                        [icon]="view[v.status].icon"
+                      />
+                    </td>
+                    <td class="actions">
+                      @if (v.receiptId) {
+                        <button
+                          mat-button
+                          type="button"
+                          (click)="openReceipt(v)"
+                          [attr.aria-label]="
+                            'View receipt for ' +
+                            v.plateNumber +
+                            ' on ' +
+                            (v.checkInAtUtc | date: 'd MMM')
+                          "
+                        >
+                          Receipt
+                        </button>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <mat-paginator
+            [length]="s.page.totalCount"
+            [pageIndex]="pageIndex()"
+            [pageSize]="pageSize()"
+            [pageSizeOptions]="[10, 25, 50]"
+            (page)="onPage($event)"
+            aria-label="History pages"
+          />
+        }
+      }
+    }
+  }
+}

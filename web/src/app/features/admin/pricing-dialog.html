@@ -1,0 +1,80 @@
+<h2 mat-dialog-title>{{ title }}</h2>
+<form [formGroup]="form" (ngSubmit)="save()" novalidate>
+  <mat-dialog-content class="form-grid">
+    @if (error(); as message) {
+      <app-error-banner [message]="message" [retryable]="false" />
+    }
+
+    <p class="note">
+      This adds a <strong>new price version</strong>. Existing receipts keep the price they were
+      calculated with.
+    </p>
+
+    @if (data.mode === 'rule') {
+      <mat-form-field appearance="outline">
+        <mat-label>Price per started hour</mat-label>
+        <input matInput type="number" step="0.01" min="0" formControlName="hourlyRate" required />
+        @if (form.controls.hourlyRate.invalid) {
+          <mat-error>Enter an amount from 0 to 1000 with at most 2 decimals.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Daily maximum</mat-label>
+        <input matInput type="number" step="0.01" min="0" formControlName="dailyCap" required />
+        <mat-hint>The most one 24-hour block can cost.</mat-hint>
+        @if (form.controls.dailyCap.hasError('capBelowRate')) {
+          <mat-error>The daily maximum cannot be lower than the hourly price.</mat-error>
+        } @else if (form.controls.dailyCap.invalid) {
+          <mat-error>Enter an amount with at most 2 decimals.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Free minutes</mat-label>
+        <input
+          matInput
+          type="number"
+          step="1"
+          min="0"
+          max="240"
+          formControlName="freeMinutes"
+          required
+        />
+        <mat-hint>Deducted from the start of every stay.</mat-hint>
+        @if (form.controls.freeMinutes.invalid) {
+          <mat-error>Enter a whole number of minutes from 0 to 240.</mat-error>
+        }
+      </mat-form-field>
+    } @else {
+      <mat-form-field appearance="outline">
+        <mat-label>Flat fee</mat-label>
+        <input matInput type="number" step="0.01" min="0" formControlName="amount" required />
+        <mat-hint>Replaces the normal fee when a driver loses the ticket.</mat-hint>
+        @if (form.controls.amount.invalid) {
+          <mat-error>Enter an amount with at most 2 decimals.</mat-error>
+        }
+      </mat-form-field>
+    }
+
+    <mat-checkbox formControlName="startLater"
+      >Start at a later time (otherwise it applies immediately)</mat-checkbox
+    >
+    @if (form.controls.startLater.value) {
+      <mat-form-field appearance="outline">
+        <mat-label>Starts at</mat-label>
+        <input matInput type="datetime-local" formControlName="startAt" [min]="minStart" required />
+      </mat-form-field>
+    }
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close [disabled]="saving()">Cancel</button>
+    <button mat-flat-button type="submit" [disabled]="saving()" [attr.aria-busy]="saving()">
+      @if (saving()) {
+        <mat-spinner diameter="20" aria-label="Saving" />
+      } @else {
+        Save price
+      }
+    </button>
+  </mat-dialog-actions>
+</form>

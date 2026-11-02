@@ -1,0 +1,90 @@
+<p class="intro">
+  Prices apply to <strong>spot types</strong>. Changing a price never changes a receipt that was
+  already issued.
+</p>
+
+@switch (state().status) {
+  @case ('loading') {
+    <app-loading label="Loading prices" />
+  }
+  @case ('error') {
+    @if (state(); as s) {
+      @if (s.status === 'error') {
+        <app-error-banner [message]="s.message" (retry)="load()" />
+      }
+    }
+  }
+  @case ('ready') {
+    @if (state(); as s) {
+      @if (s.status === 'ready') {
+        <div class="table-wrap">
+          <table class="data-table">
+            <caption class="visually-hidden">
+              Current prices by spot type
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Spot type</th>
+                <th scope="col" class="num">Per started hour</th>
+                <th scope="col" class="num">Daily maximum</th>
+                <th scope="col" class="num">Free minutes</th>
+                <th scope="col">In force since</th>
+                <th scope="col"><span class="visually-hidden">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (rule of s.pricing.rules; track rule.spotType) {
+                <tr>
+                  <th scope="row">
+                    <span class="type"
+                      ><mat-icon aria-hidden="true">{{ typeIcon(rule.spotType) }}</mat-icon
+                      >{{ rule.spotType }}</span
+                    >
+                  </th>
+                  <td class="num">{{ rule.hourlyRate | number: '1.2-2' }}</td>
+                  <td class="num">{{ rule.dailyCap | number: '1.2-2' }}</td>
+                  <td class="num">{{ rule.freeMinutes }}</td>
+                  <td class="muted">{{ rule.effectiveFromUtc | date: 'mediumDate' }}</td>
+                  <td class="actions">
+                    <button
+                      mat-stroked-button
+                      type="button"
+                      (click)="edit({ mode: 'rule', rule })"
+                      [attr.aria-label]="'Change the price for ' + rule.spotType + ' spots'"
+                    >
+                      Change
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <section class="card lost">
+          <div>
+            <h2>Lost-ticket fee</h2>
+            <p>A flat fee that replaces the normal fee when a driver loses their ticket.</p>
+          </div>
+          <div class="lost-amount">
+            @if (s.pricing.lostTicketFee; as fee) {
+              <strong>{{ fee.amount | number: '1.2-2' }}</strong>
+            } @else {
+              <strong>Not set</strong>
+            }
+            <button
+              mat-stroked-button
+              type="button"
+              (click)="
+                edit({ mode: 'lost-ticket', current: s.pricing.lostTicketFee?.amount ?? null })
+              "
+              aria-label="Change the lost-ticket fee"
+            >
+              Change
+            </button>
+          </div>
+        </section>
+      }
+    }
+  }
+}

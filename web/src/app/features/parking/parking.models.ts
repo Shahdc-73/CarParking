@@ -1,12 +1,14 @@
 export type SpotType = 'Standard' | 'Compact' | 'EV' | 'Disabled' | 'Motorcycle';
 
-export interface PagedResult<T> {
-  items: T[];
-  page: number;
-  pageSize: number;
-  totalCount: number;
-  totalPages: number;
-}
+export const SPOT_TYPES: readonly SpotType[] = [
+  'Standard',
+  'Compact',
+  'EV',
+  'Disabled',
+  'Motorcycle',
+];
+
+export type { PagedResult } from '../../core/api/paging';
 
 export interface Lot {
   id: string;

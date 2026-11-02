@@ -7,7 +7,7 @@ using ParkWise.Infrastructure.Persistence;
 
 namespace ParkWise.Infrastructure.Identity;
 
-public sealed class UserService(UserManager<ApplicationUser> users, AppDbContext db, TimeProvider clock) : IUserService
+public sealed class UserService(UserManager<ApplicationUser> users, AppDbContext db, TimeProvider clock, ICurrentUser currentUser) : IUserService
 {
     public async Task<PagedResult<UserDto>> ListAsync(UserListQuery query, CancellationToken ct)
     {
@@ -77,6 +77,10 @@ public sealed class UserService(UserManager<ApplicationUser> users, AppDbContext
 
     public async Task<Result> SetActiveAsync(Guid userId, bool isActive, CancellationToken ct)
     {
+        // Deactivating yourself would lock you out, and if you are the last admin nobody could undo it.
+        if (!isActive && currentUser.UserId == userId)
+            return Result.Failure(Error.Conflict("users.cannot_deactivate_self", "You cannot deactivate your own account."));
+
         var user = await users.FindByIdAsync(userId.ToString());
         if (user is null) return Result.Failure(Error.NotFound("users.not_found", "User not found."));
 
