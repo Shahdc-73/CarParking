@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using ParkWise.Api.Infrastructure;
 using ParkWise.Application.Auth;
 using ParkWise.Application.Common;
@@ -13,16 +14,19 @@ public class AuthController(IAuthService auth) : ApiControllerBase
     private const string CookiePath = "/api/v1/auth"; // the browser only sends it to auth endpoints
 
     [HttpPost("register")]
+    [EnableRateLimiting(HardeningExtensions.AuthPolicy)]
     [ProducesResponseType<AuthResponse>(StatusCodes.Status201Created)]
     public async Task<IActionResult> Register(RegisterRequest request, CancellationToken ct)
         => Respond(await auth.RegisterAsync(request, ct), StatusCodes.Status201Created);
 
     [HttpPost("login")]
+    [EnableRateLimiting(HardeningExtensions.AuthPolicy)]
     [ProducesResponseType<AuthResponse>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Login(LoginRequest request, CancellationToken ct)
         => Respond(await auth.LoginAsync(request, ct));
 
     [HttpPost("refresh")]
+    [EnableRateLimiting(HardeningExtensions.AuthPolicy)]
     [ProducesResponseType<AuthResponse>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Refresh(CancellationToken ct)
     {

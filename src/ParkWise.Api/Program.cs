@@ -36,6 +36,8 @@ try
     builder.Services.AddInfrastructure(builder.Configuration);
     builder.Services.AddJwtAuthentication();
     builder.Services.AddSwaggerWithJwt();
+    builder.Services.AddForwardedHeadersFromConfig(builder.Configuration);
+    builder.Services.AddAuthRateLimiting(builder.Configuration);
 
     var origins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? [];
     builder.Services.AddCors(o => o.AddDefaultPolicy(p => p
@@ -58,6 +60,7 @@ try
         await IdentitySeeder.SeedAsync(scope.ServiceProvider);
     }
 
+    app.UseForwardedHeaders(); // first: everything after (logging, rate limiting) must see the real client IP
     app.UseExceptionHandler();
     app.UseStatusCodePages();
     app.UseSerilogRequestLogging();
@@ -68,7 +71,9 @@ try
         app.UseSwaggerUI();
     }
 
+    app.UseApiSecurityHeaders();
     app.UseCors();
+    app.UseRateLimiter();
     app.UseAuthentication();
     app.UseAuthorization();
 

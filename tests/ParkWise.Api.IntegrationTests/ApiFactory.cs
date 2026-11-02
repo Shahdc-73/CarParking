@@ -36,6 +36,9 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         // expire unrelated reservations. Tests run the very same maintenance service on demand instead (Arrange.RunMaintenanceAsync).
         builder.UseSetting("Reservations:ExpiryJob:Enabled", "false");
 
+        // Hundreds of tests log in from the same fake IP; the rate-limit tests lower this on their own host.
+        builder.UseSetting("RateLimiting:Auth:PermitLimit", "100000");
+
         builder.ConfigureTestServices(services =>
         {
             services.RemoveAll<TimeProvider>();

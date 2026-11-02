@@ -26,6 +26,8 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
       Database__MigrateOnStartup: "true"
+      # Only the Docker network's own addresses (nginx) may tell the API who the real client is.
+      ForwardedHeaders__KnownNetworks__0: 172.16.0.0/12
       Jwt__Key: ${JWT_KEY:?Set JWT_KEY in .env (32+ characters)}
       Seed__Password: ${SEED_PASSWORD:?Set SEED_PASSWORD in .env}
       ConnectionStrings__Default: Server=db;Database=ParkWise;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True
