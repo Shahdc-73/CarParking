@@ -4,6 +4,11 @@
     <ProjectReference Include="..\ParkWise.Domain\ParkWise.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+  </ItemGroup>
+
   <PropertyGroup>
   </PropertyGroup>
 

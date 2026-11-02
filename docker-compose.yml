@@ -26,6 +26,8 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
       Database__MigrateOnStartup: "true"
+      Jwt__Key: ${JWT_KEY:?Set JWT_KEY in .env (32+ characters)}
+      Seed__Password: ${SEED_PASSWORD:?Set SEED_PASSWORD in .env}
       ConnectionStrings__Default: Server=db;Database=ParkWise;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True
     ports:
       - "5080:8080"

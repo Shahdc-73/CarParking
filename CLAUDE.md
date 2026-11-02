@@ -22,12 +22,14 @@ Angular (standalone, signals, typed reactive forms, Material) in `web/`. xUnit +
 - Money is `decimal`. All timestamps UTC; the frontend converts to local time.
 - Errors are RFC 7807 `ProblemDetails` via the global handler.
 - Concurrency: filtered unique indexes (one active session per spot / per vehicle) + `rowversion` on Spot for reservation overlap.
-- No secrets in git. Config via appsettings + environment variables; `.env` is git-ignored.
+- No secrets in git. Config via appsettings + environment variables; `.env` is git-ignored. Local `dotnet run` reads `Jwt:Key` and `Seed:Password` from user-secrets (`dotnet user-secrets set ... --project src/ParkWise.Api`); Docker reads `JWT_KEY` / `SEED_PASSWORD` from `.env`.
+- Auth: access JWT (15 min, in memory on the client) + opaque refresh token (7 days) in an HttpOnly, SameSite=Strict cookie scoped to `/api/v1/auth`. Refresh tokens are stored as SHA-256 hashes, rotated on every use; replaying a used token revokes its whole family. Self-registration only creates Drivers.
+- Controllers inherit `ApiControllerBase` (`FromError`, `ToActionResult`) and never validate by hand: `ValidationFilter` runs FluentValidation validators. Unexpected exceptions go through `GlobalExceptionHandler`.
 
 ## Conventions
 - File-scoped namespaces, nullable enabled, warnings are errors.
 - Package versions live in `Directory.Packages.props` (central package management); no `Version=` in csproj.
-- Tests: `*.Domain.Tests` (pure logic), `*.Application.Tests` (NSubstitute), `*.Infrastructure.Tests` (EF model rules, no DB), `*.Api.IntegrationTests` (WebApplicationFactory, Testcontainers SQL Server from phase 3).
+- Tests: `*.Domain.Tests` (pure logic), `*.Application.Tests` (NSubstitute), `*.Infrastructure.Tests` (EF model rules, no DB), `*.Api.IntegrationTests` (WebApplicationFactory + Testcontainers SQL Server; needs Docker; one shared container via `ApiFactory`, tests isolate with unique data). On macOS Docker Desktop run with `DOCKER_HOST=unix://$HOME/.docker/run/docker.sock`.
 - Entities have private setters and enforce their own invariants (throw `DomainException`); EF config lives in `Infrastructure/Persistence/Configurations`.
 - After changing the model add a migration (a test fails if you forget):
   `dotnet tool run dotnet-ef migrations add <Name> -p src/ParkWise.Infrastructure -s src/ParkWise.Api -o Persistence/Migrations`

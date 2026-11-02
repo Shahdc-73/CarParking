@@ -1,5 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using ParkWise.Api.Infrastructure;
+using ParkWise.Application;
 using ParkWise.Infrastructure;
+using ParkWise.Infrastructure.Identity;
 using ParkWise.Infrastructure.Persistence;
 using Serilog;
 
@@ -14,13 +17,26 @@ try
         .ReadFrom.Services(services)
         .Enrich.FromLogContext());
 
-    builder.Services.AddControllers();
+    builder.Services.AddControllers(o => o.Filters.Add<ValidationFilter>())
+        // Our ValidationFilter replaces the built-in automatic 400, so errors have one consistent shape.
+        .ConfigureApiBehaviorOptions(o => o.SuppressModelStateInvalidFilter = true);
     builder.Services.AddProblemDetails();
+    builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
+    builder.Services.AddApplication();
     builder.Services.AddInfrastructure(builder.Configuration);
+    builder.Services.AddJwtAuthentication();
+    builder.Services.AddSwaggerWithJwt();
+
+    var origins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? [];
+    builder.Services.AddCors(o => o.AddDefaultPolicy(p => p
+        .WithOrigins(origins)
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials())); // needed so the browser sends the refresh cookie cross-origin
+
     builder.Services.AddHealthChecks()
         .AddDbContextCheck<AppDbContext>("database", tags: ["ready"]);
-    builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerGen();
 
     var app = builder.Build();
 
@@ -30,6 +46,7 @@ try
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         await db.Database.MigrateAsync();
         await DbSeeder.SeedAsync(db);
+        await IdentitySeeder.SeedAsync(scope.ServiceProvider);
     }
 
     app.UseExceptionHandler();
@@ -42,7 +59,12 @@ try
         app.UseSwaggerUI();
     }
 
+    app.UseCors();
+    app.UseAuthentication();
+    app.UseAuthorization();
+
     app.MapControllers();
+
     // Liveness: is the process up? No dependencies, so it never flaps because of the database.
     app.MapHealthChecks("/health", new() { Predicate = _ => false });
     // Readiness: can it serve traffic? Includes the database.
