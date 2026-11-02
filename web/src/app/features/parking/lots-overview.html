@@ -1,0 +1,92 @@
+<header class="head">
+  <div>
+    <h1>Parking lots</h1>
+    <p class="intro">Free spots right now, by lot and spot type.</p>
+  </div>
+  <button
+    mat-stroked-button
+    type="button"
+    (click)="load()"
+    [disabled]="state().status === 'loading'"
+  >
+    <mat-icon aria-hidden="true">refresh</mat-icon>
+    Refresh
+  </button>
+</header>
+
+@switch (state().status) {
+  @case ('loading') {
+    <app-loading label="Loading parking lots" />
+  }
+  @case ('error') {
+    @if (state(); as s) {
+      @if (s.status === 'error') {
+        <app-error-banner [message]="s.message" (retry)="load()" />
+      }
+    }
+  }
+  @case ('ready') {
+    @if (state(); as s) {
+      @if (s.status === 'ready') {
+        @if (s.lots.length === 0) {
+          <app-empty-state
+            icon="local_parking"
+            title="No parking lots yet"
+            message="An administrator needs to add a lot first."
+          />
+        } @else {
+          <ul class="grid">
+            @for (o of s.lots; track o.lot.id) {
+              <li>
+                <mat-card appearance="outlined" [class.inactive]="!o.lot.isActive">
+                  <mat-card-header>
+                    <mat-card-title>{{ o.lot.name }}</mat-card-title>
+                    <mat-card-subtitle>{{ o.lot.address }}</mat-card-subtitle>
+                  </mat-card-header>
+                  <mat-card-content>
+                    @if (!o.lot.isActive) {
+                      <p class="closed"><mat-icon aria-hidden="true">block</mat-icon> Closed</p>
+                    }
+                    <p class="headline">
+                      <strong>{{ o.availability.totals.available }}</strong>
+                      <span> free of {{ o.availability.totals.total }}</span>
+                    </p>
+                    <mat-progress-bar
+                      mode="determinate"
+                      [value]="occupancy(o)"
+                      [attr.aria-label]="o.lot.name + ' is ' + occupancy(o) + ' percent full'"
+                    />
+                    <table class="types">
+                      <caption class="visually-hidden">
+                        Free spots by type in
+                        {{
+                          o.lot.name
+                        }}
+                      </caption>
+                      <thead>
+                        <tr>
+                          <th scope="col">Type</th>
+                          <th scope="col">Free</th>
+                          <th scope="col">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (t of o.availability.byType; track t.type) {
+                          <tr>
+                            <th scope="row">{{ t.type }}</th>
+                            <td>{{ t.counts.available }}</td>
+                            <td>{{ t.counts.total }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </mat-card-content>
+                </mat-card>
+              </li>
+            }
+          </ul>
+        }
+      }
+    }
+  }
+}

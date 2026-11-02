@@ -9,7 +9,16 @@ docker compose up --build     # API on http://localhost:5080 (/swagger, /health,
 dotnet test                   # needs Docker: integration tests start a SQL Server container
 ```
 
+Open the app at http://localhost:4200 (Swagger at http://localhost:5080/swagger).
+
 Demo users (password = your `SEED_PASSWORD`): `admin@`, `attendant@`, `driver1@`, `driver2@` + `parkwise.local`.
+
+Frontend development (hot reload; proxies /api to the API on :5080):
+```
+docker compose up -d db api
+cd web && npm ci && npm start       # http://localhost:4200
+npm test -- --watch=false           # unit tests (Vitest)
+```
 
 Running the API outside Docker:
 ```

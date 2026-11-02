@@ -1,0 +1,68 @@
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<mat-sidenav-container class="shell">
+  <mat-sidenav
+    #nav
+    [mode]="isHandset() ? 'over' : 'side'"
+    [opened]="!isHandset()"
+    [fixedInViewport]="isHandset()"
+    class="sidenav"
+  >
+    <nav aria-label="Main">
+      <mat-nav-list>
+        @for (item of items(); track item.path) {
+          <a
+            mat-list-item
+            [routerLink]="item.path"
+            routerLinkActive="active"
+            ariaCurrentWhenActive="page"
+            (click)="closeIfHandset(nav)"
+          >
+            <mat-icon matListItemIcon aria-hidden="true">{{ item.icon }}</mat-icon>
+            <span matListItemTitle>{{ item.label }}</span>
+          </a>
+        }
+      </mat-nav-list>
+    </nav>
+  </mat-sidenav>
+
+  <mat-sidenav-content>
+    <mat-toolbar class="toolbar">
+      @if (isHandset()) {
+        <button
+          mat-icon-button
+          type="button"
+          aria-label="Open navigation menu"
+          (click)="nav.toggle()"
+        >
+          <mat-icon>menu</mat-icon>
+        </button>
+      }
+      <span class="brand">ParkWise</span>
+      <span class="spacer"></span>
+
+      @if (user(); as u) {
+        <button mat-button type="button" [matMenuTriggerFor]="userMenu" class="user-button">
+          <mat-icon aria-hidden="true">account_circle</mat-icon>
+          <span class="user-name">{{ u.fullName }}</span>
+          <mat-icon aria-hidden="true">arrow_drop_down</mat-icon>
+        </button>
+        <mat-menu #userMenu="matMenu">
+          <div class="menu-header" role="presentation">
+            <strong>{{ u.fullName }}</strong>
+            <span>{{ u.email }}</span>
+            <span class="roles">{{ u.roles.join(', ') }}</span>
+          </div>
+          <button mat-menu-item type="button" (click)="logout()">
+            <mat-icon aria-hidden="true">logout</mat-icon>
+            <span>Sign out</span>
+          </button>
+        </mat-menu>
+      }
+    </mat-toolbar>
+
+    <main id="main" tabindex="-1">
+      <router-outlet />
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>

@@ -36,6 +36,16 @@ Angular (standalone, signals, typed reactive forms, Material) in `web/`. xUnit +
 - Auth: access JWT (15 min, in memory on the client) + opaque refresh token (7 days) in an HttpOnly, SameSite=Strict cookie scoped to `/api/v1/auth`. Refresh tokens are stored as SHA-256 hashes, rotated on every use; replaying a used token revokes its whole family. Self-registration only creates Drivers.
 - Controllers inherit `ApiControllerBase` (`FromError`, `ToActionResult`) and never validate by hand: `ValidationFilter` runs FluentValidation validators. Unexpected exceptions go through `GlobalExceptionHandler`.
 
+## Frontend (web/)
+- Angular 22, standalone + signals + zoneless, `OnPush`, new control flow (`@if/@for`), typed reactive forms (`NonNullableFormBuilder`), Angular Material (M3 theme in `styles.scss`), Vitest via `ng test`.
+- Folders: `core/` (api, auth), `layout/`, `shared/`, `features/<area>/` (auth, parking, gate, reservations, admin, errors). Routes are lazy (`loadComponent`).
+- Auth: access token ONLY in memory (never web storage); refresh cookie is HttpOnly. `authInterceptor` adds the bearer to `/api/v1` calls only, and on 401 refreshes once (single-flight, `AuthService.refresh()` shares one request) and replays. `provideAppInitializer` restores the session on reload. Guards are UX only; the API enforces roles.
+- `returnUrl` must go through `safeReturnUrl` (open-redirect protection). API errors go through `toApiError` (never show raw server text for 5xx).
+- The browser talks to ONE origin: `ng serve` proxies `/api` to localhost:5080 (`proxy.conf.json`), nginx does the same in Docker. No CORS, cookie stays same-site.
+- Production HTML must stay CSP-clean (no inline scripts/handlers): `npm run build:prod` runs `scripts/verify-csp.mjs`; keep `styles.inlineCritical=false`.
+- a11y: every input has a label, errors use `role=alert`/`mat-error`, skip link, focus moves to `<main>` on navigation, tables have captions.
+- Commands (Node lives in `~/.local/node/bin` if not on PATH): `cd web && npm ci && npm start` (needs the API on :5080), `npm test -- --watch=false`, `npm run build:prod`.
+
 ## Conventions
 - File-scoped namespaces, nullable enabled, warnings are errors.
 - Package versions live in `Directory.Packages.props` (central package management); no `Version=` in csproj.

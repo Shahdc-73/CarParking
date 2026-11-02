@@ -1,0 +1,44 @@
+:host {
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+  padding: 1rem;
+}
+
+mat-card {
+  width: min(100%, 26rem);
+}
+
+h1 {
+  font: var(--mat-sys-headline-small);
+  margin: 0 0 0.25rem;
+}
+
+.subtitle {
+  margin: 0 0 1.25rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+form {
+  display: grid;
+  gap: 0.25rem;
+}
+
+mat-form-field {
+  width: 100%;
+}
+
+.submit {
+  margin-top: 0.5rem;
+  min-height: 2.75rem;
+}
+
+app-error-banner {
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.alt {
+  margin: 1.25rem 0 0;
+  text-align: center;
+}

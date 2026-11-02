@@ -32,5 +32,13 @@ services:
     ports:
       - "5080:8080"
 
+  web:
+    build:
+      context: ./web
+    depends_on:
+      - api
+    ports:
+      - "4200:8080"
+
 volumes:
   sqldata:
