@@ -27,7 +27,11 @@ Angular (standalone, signals, typed reactive forms, Material) in `web/`. xUnit +
 ## Conventions
 - File-scoped namespaces, nullable enabled, warnings are errors.
 - Package versions live in `Directory.Packages.props` (central package management); no `Version=` in csproj.
-- Tests: `*.Domain.Tests` (pure logic), `*.Application.Tests` (NSubstitute), `*.Api.IntegrationTests` (WebApplicationFactory, Testcontainers SQL Server from phase 3).
+- Tests: `*.Domain.Tests` (pure logic), `*.Application.Tests` (NSubstitute), `*.Infrastructure.Tests` (EF model rules, no DB), `*.Api.IntegrationTests` (WebApplicationFactory, Testcontainers SQL Server from phase 3).
+- Entities have private setters and enforce their own invariants (throw `DomainException`); EF config lives in `Infrastructure/Persistence/Configurations`.
+- After changing the model add a migration (a test fails if you forget):
+  `dotnet tool run dotnet-ef migrations add <Name> -p src/ParkWise.Infrastructure -s src/ParkWise.Api -o Persistence/Migrations`
+- With `Database:MigrateOnStartup=true` the API migrates + seeds on start (set in docker-compose).
 - API routes under `/api/v1`, plural nouns. List endpoints support page/pageSize/sort/filters.
 - Commits: imperative, one phase = one logical commit (or a few small ones).
 

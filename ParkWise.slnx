@@ -9,5 +9,6 @@
     <Project Path="tests/ParkWise.Api.IntegrationTests/ParkWise.Api.IntegrationTests.csproj" />
     <Project Path="tests/ParkWise.Application.Tests/ParkWise.Application.Tests.csproj" />
     <Project Path="tests/ParkWise.Domain.Tests/ParkWise.Domain.Tests.csproj" />
+    <Project Path="tests/ParkWise.Infrastructure.Tests/ParkWise.Infrastructure.Tests.csproj" />
   </Folder>
 </Solution>

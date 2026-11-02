@@ -25,6 +25,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
+      Database__MigrateOnStartup: "true"
       ConnectionStrings__Default: Server=db;Database=ParkWise;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True
     ports:
       - "5080:8080"

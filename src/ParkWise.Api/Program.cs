@@ -1,3 +1,6 @@
+using Microsoft.EntityFrameworkCore;
+using ParkWise.Infrastructure;
+using ParkWise.Infrastructure.Persistence;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration().WriteTo.Console().CreateBootstrapLogger();
@@ -13,11 +16,21 @@ try
 
     builder.Services.AddControllers();
     builder.Services.AddProblemDetails();
-    builder.Services.AddHealthChecks();
+    builder.Services.AddInfrastructure(builder.Configuration);
+    builder.Services.AddHealthChecks()
+        .AddDbContextCheck<AppDbContext>("database", tags: ["ready"]);
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
 
     var app = builder.Build();
+
+    if (app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
+    {
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await db.Database.MigrateAsync();
+        await DbSeeder.SeedAsync(db);
+    }
 
     app.UseExceptionHandler();
     app.UseStatusCodePages();
@@ -30,7 +43,10 @@ try
     }
 
     app.MapControllers();
-    app.MapHealthChecks("/health");
+    // Liveness: is the process up? No dependencies, so it never flaps because of the database.
+    app.MapHealthChecks("/health", new() { Predicate = _ => false });
+    // Readiness: can it serve traffic? Includes the database.
+    app.MapHealthChecks("/health/ready", new() { Predicate = c => c.Tags.Contains("ready") });
 
     app.Run();
 }
