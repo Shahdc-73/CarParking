@@ -1,6 +1,7 @@
 using ParkWise.Domain.Common;
 using ParkWise.Domain.Enums;
 using ParkWise.Domain.Exceptions;
+using ParkWise.Domain.Services;
 
 namespace ParkWise.Domain.Entities;
 
@@ -29,6 +30,8 @@ public class PricingRule : Entity
     public decimal DailyCap { get; private set; }
     public int FreeMinutes { get; private set; }
     public DateTime EffectiveFromUtc { get; private set; }
+
+    public PricingTerms ToTerms() => new(HourlyRate, DailyCap, FreeMinutes);
 }
 
 public class LostTicketFee : Entity

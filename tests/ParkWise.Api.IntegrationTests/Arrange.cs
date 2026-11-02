@@ -2,6 +2,7 @@ using System.Net;
 using Microsoft.Extensions.DependencyInjection;
 using ParkWise.Application.Auth;
 using ParkWise.Application.Parking;
+using ParkWise.Application.Sessions;
 using ParkWise.Application.Vehicles;
 using ParkWise.Domain.Entities;
 using ParkWise.Domain.Enums;
@@ -75,6 +76,37 @@ public sealed class Arrange(ApiFactory factory)
     }
 
     public static string RandomPlate() => Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
+
+    // ---- gate operations ----
+    public Task<HttpResponseMessage> CheckInAsync(HttpClient attendant, Guid lotId, string? plate = null, VehicleType? type = VehicleType.Car)
+        => attendant.PostJsonAsync("/api/v1/sessions/check-in", new CheckInRequest(lotId, plate ?? RandomPlate(), type));
+
+    public async Task<SessionDto> CheckedInAsync(HttpClient attendant, Guid lotId, string? plate = null, VehicleType? type = VehicleType.Car)
+    {
+        var response = await CheckInAsync(attendant, lotId, plate, type);
+        await EnsureCreatedAsync(response);
+        return await response.ReadAsync<SessionDto>();
+    }
+
+    public static Task<HttpResponseMessage> CheckOutAsync(HttpClient attendant, Guid sessionId, string? idempotencyKey = null)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/sessions/{sessionId}/check-out");
+        if (idempotencyKey is not null) request.Headers.Add("Idempotency-Key", idempotencyKey);
+        return attendant.SendAsync(request);
+    }
+
+    public static bool Replayed(HttpResponseMessage response) => response.Headers.GetValues("Idempotent-Replayed").Single() == "true";
+
+    /// <summary>A lot with one level and the given spot types ("A-01", "A-02"... in order).</summary>
+    public async Task<(LotDto Lot, LevelDto Level, List<SpotDto> Spots)> LotWithSpotsAsync(HttpClient admin, params SpotType[] types)
+    {
+        var lot = await LotAsync(admin);
+        var level = await LevelAsync(admin, lot.Id);
+        var spots = new List<SpotDto>();
+        for (var i = 0; i < types.Length; i++)
+            spots.Add(await SpotAsync(admin, level.Id, $"A-{i + 1:00}", types[i]));
+        return (lot, level, spots);
+    }
 
     // ---- direct database access, only for states that need features built in later phases ----
     public async Task WithDbAsync(Func<AppDbContext, Task> action)

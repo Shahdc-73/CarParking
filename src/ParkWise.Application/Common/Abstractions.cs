@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using ParkWise.Domain.Entities;
 
 namespace ParkWise.Application.Common;
@@ -16,6 +17,13 @@ public interface IAppDbContext
     DbSet<ParkingSession> Sessions { get; }
     DbSet<Reservation> Reservations { get; }
     DbSet<AuditLog> AuditLogs { get; }
+    DbSet<PricingRule> PricingRules { get; }
+    DbSet<LostTicketFee> LostTicketFees { get; }
+    DbSet<Payment> Payments { get; }
+    DbSet<Receipt> Receipts { get; }
+
+    /// <summary>Exposed so a service can discard a failed unit of work and retry from a clean slate.</summary>
+    ChangeTracker ChangeTracker { get; }
 
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }

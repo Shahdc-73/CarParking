@@ -3,6 +3,8 @@ using Microsoft.Extensions.DependencyInjection;
 using ParkWise.Application.Audit;
 using ParkWise.Application.Common;
 using ParkWise.Application.Parking;
+using ParkWise.Application.Pricing;
+using ParkWise.Application.Sessions;
 using ParkWise.Application.Vehicles;
 
 namespace ParkWise.Application;
@@ -19,6 +21,8 @@ public static class DependencyInjection
         services.AddScoped<ILotService, LotService>();
         services.AddScoped<ISpotService, SpotService>();
         services.AddScoped<IVehicleService, VehicleService>();
+        services.AddScoped<IPricingService, PricingService>();
+        services.AddScoped<ISessionService, SessionService>();
         return services;
     }
 }

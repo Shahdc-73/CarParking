@@ -34,8 +34,14 @@ public sealed class CreateVehicleRequestValidator : AbstractValidator<CreateVehi
         RuleFor(x => x.Color).NotEmpty().MaximumLength(30);
     }
 
-    private static bool BeAValidPlate(string plate)
+    private static bool BeAValidPlate(string plate) => PlateRules.IsValid(plate);
+}
+
+public static class PlateRules
+{
+    public static bool IsValid(string? plate)
     {
+        if (string.IsNullOrWhiteSpace(plate)) return false;
         try { Vehicle.NormalizePlate(plate); return true; }
         catch (Exception) { return false; }
     }

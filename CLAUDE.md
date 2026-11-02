@@ -21,6 +21,9 @@ Angular (standalone, signals, typed reactive forms, Material) in `web/`. xUnit +
 - Audit: call `IAuditLogger.Log(...)` BEFORE the single `SaveChangesAsync`; it only adds the row, so the change and its audit entry commit in one transaction. Audit every admin mutation.
 - Deleting data that has parking history is blocked (409); deactivate / take out of service instead. Spot type cannot change while in use or with pending reservations.
 - Someone else's resource returns 404, not 403 (vehicles), so ids can't be probed. Ownership rules live in one query helper per service.
+- Fees: `FeeCalculator` (Domain) is pure. The first `FreeMinutes` are DEDUCTED (not a grace period), the rest is billed per started hour, and each 24h block from check-in is capped at `DailyCap` (midnight is irrelevant). Lost ticket = flat fee that replaces the normal fee. Pricing is versioned (append a row, never edit); the rule in force at check-out time applies, and receipts store a frozen breakdown.
+- Races (check-in/check-out): the database arbitrates (unique indexes + spot rowversion); services catch `DbUpdateException`, `ChangeTracker.Clear()`, and retry (check-in) or return the winner's receipt (check-out, idempotent). Never use explicit transactions here (EnableRetryOnFailure); one `SaveChangesAsync` per unit of work.
+- Integration tests control time with `factory.Clock.TravelBy(...)`: log in BEFORE travelling (JWT validation uses the real clock). Pricing tests only change Motorcycle pricing so other fee tests stay stable.
 - Entity ids are assigned in code (Guid v7) and configured `ValueGeneratedNever`; without that EF treats new children of tracked parents as existing rows.
 - Identity (`ApplicationUser`) lives in Infrastructure; Domain refers to users by `Guid UserId`.
 - Use `TimeProvider`, never `DateTime.UtcNow` directly.
