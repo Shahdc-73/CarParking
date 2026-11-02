@@ -1,0 +1,147 @@
+<a class="back" routerLink="/lots">
+  <mat-icon aria-hidden="true">arrow_back</mat-icon>
+  All parking lots
+</a>
+
+@if (state(); as s) {
+  <app-page-header
+    [title]="s.status === 'ready' ? s.board.lotName : 'Parking lot'"
+    subtitle="Every spot, live. Green is free, red is taken."
+  >
+    @if (s.status === 'ready') {
+      <span class="updated" role="status">
+        @if (refreshing()) {
+          Refreshing…
+        } @else {
+          Updated {{ s.loadedAt | date: 'mediumTime' }}
+        }
+      </span>
+    }
+    <button
+      mat-stroked-button
+      type="button"
+      (click)="load(true)"
+      [disabled]="s.status === 'loading' || refreshing()"
+    >
+      <mat-icon aria-hidden="true">refresh</mat-icon>
+      Refresh
+    </button>
+  </app-page-header>
+
+  @switch (s.status) {
+    @case ('loading') {
+      <app-loading label="Loading spots" />
+    }
+    @case ('error') {
+      <app-error-banner [message]="s.message" (retry)="load(false)" />
+    }
+    @case ('ready') {
+      @let board = s.board;
+
+      @if (refreshError(); as problem) {
+        <app-error-banner
+          [message]="'Could not refresh: ' + problem + ' Showing the last data.'"
+          (retry)="load(true)"
+        />
+      }
+
+      <div class="toolbar">
+        <ul class="legend" aria-label="Legend">
+          <li class="legend-item" data-status="Available">
+            <mat-icon aria-hidden="true">check_circle</mat-icon>
+            <strong>{{ board.totals.available }}</strong> free
+          </li>
+          <li class="legend-item" data-status="Occupied">
+            <mat-icon aria-hidden="true">directions_car</mat-icon>
+            <strong>{{ board.totals.occupied }}</strong> occupied
+          </li>
+          @if (board.totals.reserved > 0) {
+            <li class="legend-item" data-status="Reserved">
+              <mat-icon aria-hidden="true">schedule</mat-icon>
+              <strong>{{ board.totals.reserved }}</strong> reserved
+            </li>
+          }
+          @if (board.totals.outOfService > 0) {
+            <li class="legend-item" data-status="OutOfService">
+              <mat-icon aria-hidden="true">block</mat-icon>
+              <strong>{{ board.totals.outOfService }}</strong> out of service
+            </li>
+          }
+        </ul>
+      </div>
+
+      @if (!board.isActive) {
+        <p class="closed-note"><mat-icon aria-hidden="true">block</mat-icon> This lot is closed.</p>
+      }
+
+      @if (board.totals.total === 0) {
+        <app-empty-state
+          icon="inventory_2"
+          title="No spots in this lot yet"
+          message="An administrator needs to add spots first."
+        />
+      }
+
+      @for (level of board.levels; track level.id) {
+        @if (level.spots.length > 0) {
+          <section class="level" [attr.aria-labelledby]="'level-' + level.id">
+            <h2 [id]="'level-' + level.id">
+              {{ level.name }}
+              <span class="count"
+                >{{ level.spots.length }} {{ level.spots.length === 1 ? 'spot' : 'spots' }}</span
+              >
+            </h2>
+
+            <ul class="spots">
+              @for (spot of level.spots; track spot.id) {
+                <li
+                  class="spot"
+                  [attr.data-status]="spot.status"
+                  [attr.aria-label]="ariaLabel(spot)"
+                >
+                  <div class="spot-head">
+                    <span class="code">{{ spot.code }}</span>
+                    <mat-icon class="type" [attr.title]="spot.type" aria-hidden="true">{{
+                      typeIcon(spot.type)
+                    }}</mat-icon>
+                  </div>
+
+                  <div class="state">
+                    <mat-icon aria-hidden="true">{{ viewOf[spot.status].icon }}</mat-icon>
+                    {{ viewOf[spot.status].label }}
+                  </div>
+
+                  @if (spot.occupancy; as o) {
+                    <div class="timer" aria-hidden="true">
+                      <mat-icon>timer</mat-icon>
+                      <span class="clock">{{ formatElapsed(elapsed(o)) }}</span>
+                    </div>
+                    @if (freeLeft(o) > 0) {
+                      <div class="fee free" aria-hidden="true">
+                        Free for {{ formatElapsed(freeLeft(o)) }} more
+                      </div>
+                    } @else if (o.feeSoFar !== null) {
+                      <div class="fee" aria-hidden="true">
+                        Fee so far <strong>{{ o.feeSoFar | number: '1.2-2' }}</strong>
+                      </div>
+                    }
+                    <div class="who" aria-hidden="true">
+                      @if (o.isMine) {
+                        <span class="mine">Your car</span>
+                      }
+                      <span class="plate">{{ o.plateNumber }}</span>
+                    </div>
+                  } @else if (spot.status === 'Reserved' && spot.holdExpiresAtUtc) {
+                    <div class="fee" aria-hidden="true">
+                      Held until {{ spot.holdExpiresAtUtc | date: 'shortTime' }}
+                    </div>
+                  }
+                </li>
+              }
+            </ul>
+          </section>
+        }
+      }
+    }
+  }
+}

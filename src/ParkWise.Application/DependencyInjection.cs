@@ -21,6 +21,7 @@ public static class DependencyInjection
         services.AddScoped<IAuditQueryService, AuditQueryService>();
         services.AddScoped<ILotService, LotService>();
         services.AddScoped<ISpotService, SpotService>();
+        services.AddScoped<ILotBoardService, LotBoardService>();
         services.AddScoped<IVehicleService, VehicleService>();
         services.AddScoped<IPricingService, PricingService>();
         services.AddScoped<ISessionService, SessionService>();

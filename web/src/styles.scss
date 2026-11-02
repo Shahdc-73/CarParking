@@ -15,6 +15,25 @@ html {
   );
 }
 
+/* Spot status colours. Green = free, red = occupied, amber = reserved. Each has a dark-mode pair via light-dark().
+   Always shown WITH an icon and a word, so colour is never the only signal. Text/background pairs keep AA contrast. */
+:root {
+  --pw-free-bg: light-dark(#dcf5e0, #11341b);
+  --pw-free-fg: light-dark(#0a3d17, #c4f2cc);
+  --pw-free-border: light-dark(#6fc487, #2f7a43);
+  --pw-free-strong: light-dark(#1b8a3a, #5fd37e);
+
+  --pw-occupied-bg: light-dark(#fddcd9, #4a1713);
+  --pw-occupied-fg: light-dark(#5e0f09, #ffd8d4);
+  --pw-occupied-border: light-dark(#ee8f87, #b04a40);
+  --pw-occupied-strong: light-dark(#c62828, #ff8a80);
+
+  --pw-reserved-bg: light-dark(#fff0cc, #4a3600);
+  --pw-reserved-fg: light-dark(#523800, #ffe6a8);
+  --pw-reserved-border: light-dark(#e3b341, #a67c00);
+  --pw-reserved-strong: light-dark(#b27b00, #f2c14e);
+}
+
 html,
 body {
   height: 100%;

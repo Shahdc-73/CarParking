@@ -8,13 +8,23 @@
     [fixedInViewport]="isHandset()"
     class="sidenav"
   >
+    <div class="sidenav-header">
+      <span class="logo" aria-hidden="true"><mat-icon>local_parking</mat-icon></span>
+      <div>
+        <div class="app-name">ParkWise</div>
+        <div class="app-tagline">Parking management</div>
+      </div>
+    </div>
+
     <nav aria-label="Main">
       <mat-nav-list>
         @for (item of items(); track item.path) {
           <a
             mat-list-item
             [routerLink]="item.path"
-            routerLinkActive="active"
+            routerLinkActive
+            #link="routerLinkActive"
+            [activated]="link.isActive"
             ariaCurrentWhenActive="page"
             (click)="closeIfHandset(nav)"
           >
@@ -37,21 +47,25 @@
         >
           <mat-icon>menu</mat-icon>
         </button>
+        <span class="brand">ParkWise</span>
       }
-      <span class="brand">ParkWise</span>
       <span class="spacer"></span>
 
       @if (user(); as u) {
-        <button mat-button type="button" [matMenuTriggerFor]="userMenu" class="user-button">
-          <mat-icon aria-hidden="true">account_circle</mat-icon>
-          <span class="user-name">{{ u.fullName }}</span>
-          <mat-icon aria-hidden="true">arrow_drop_down</mat-icon>
+        <button type="button" [matMenuTriggerFor]="userMenu" class="user-button">
+          <span class="avatar" aria-hidden="true">{{ initialsOf(u.fullName) }}</span>
+          <span class="user-text">
+            <span class="user-name">{{ u.fullName }}</span>
+            <span class="user-role">{{ roleOf(u.roles) }}</span>
+          </span>
+          <span class="material-icons chevron" aria-hidden="true">arrow_drop_down</span>
         </button>
-        <mat-menu #userMenu="matMenu">
+        <mat-menu #userMenu="matMenu" xPosition="before">
           <div class="menu-header" role="presentation">
+            <span class="avatar large" aria-hidden="true">{{ initialsOf(u.fullName) }}</span>
             <strong>{{ u.fullName }}</strong>
             <span>{{ u.email }}</span>
-            <span class="roles">{{ u.roles.join(', ') }}</span>
+            <span class="role-chip">{{ roleOf(u.roles) }}</span>
           </div>
           <button mat-menu-item type="button" (click)="logout()">
             <mat-icon aria-hidden="true">logout</mat-icon>

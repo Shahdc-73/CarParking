@@ -1,50 +1,81 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
+import { PageHeader } from './page-header';
 
-/** Landing page for an area whose screens are built in the next phase: honest about what is coming, and proves the role routing works. */
+export interface PlannedFeature {
+  icon: string;
+  title: string;
+  description: string;
+}
+
+/** An area whose screens arrive in the next phase: shows exactly what will live here, as tiles, instead of an empty page. */
 @Component({
   selector: 'app-feature-placeholder',
-  imports: [MatCardModule, MatIconModule],
+  imports: [MatIconModule, PageHeader],
   template: `
-    <header>
-      <h1>{{ title() }}</h1>
-      <p class="intro">{{ intro() }}</p>
-    </header>
+    <app-page-header [title]="title()" [subtitle]="intro()" />
 
-    <mat-card appearance="outlined">
-      <mat-card-header>
-        <mat-card-title>Coming next</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <ul>
-          @for (item of items(); track item) {
-            <li><mat-icon aria-hidden="true">check_circle_outline</mat-icon>{{ item }}</li>
-          }
-        </ul>
-      </mat-card-content>
-    </mat-card>
+    <ul class="tiles">
+      @for (item of items(); track item.title) {
+        <li class="tile">
+          <span class="icon" aria-hidden="true"
+            ><mat-icon>{{ item.icon }}</mat-icon></span
+          >
+          <div>
+            <h2>{{ item.title }}</h2>
+            <p>{{ item.description }}</p>
+          </div>
+          <span class="badge">Coming soon</span>
+        </li>
+      }
+    </ul>
   `,
   styles: `
-    h1 {
-      font: var(--mat-sys-headline-medium);
-      margin: 0 0 0.25rem;
-    }
-    .intro {
-      margin: 0 0 1.5rem;
-      color: var(--mat-sys-on-surface-variant);
-    }
-    ul {
-      list-style: none;
+    .tiles {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+      gap: 1rem;
       margin: 0;
       padding: 0;
-      display: grid;
-      gap: 0.5rem;
+      list-style: none;
     }
-    li {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
+    .tile {
+      position: relative;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 1rem;
+      align-items: start;
+      padding: 1.25rem;
+      border: 1px dashed var(--mat-sys-outline-variant);
+      border-radius: 1rem;
+      background: var(--mat-sys-surface-container-lowest);
+    }
+    .icon {
+      display: grid;
+      place-items: center;
+      width: 2.75rem;
+      height: 2.75rem;
+      border-radius: 0.75rem;
+      background: var(--mat-sys-secondary-container);
+      color: var(--mat-sys-on-secondary-container);
+    }
+    h2 {
+      margin: 0 0 0.25rem;
+      font: var(--mat-sys-title-medium);
+    }
+    p {
+      margin: 0;
+      color: var(--mat-sys-on-surface-variant);
+      font: var(--mat-sys-body-medium);
+    }
+    .badge {
+      grid-column: 1 / -1;
+      justify-self: start;
+      padding: 0.125rem 0.625rem;
+      border-radius: 999px;
+      background: var(--mat-sys-surface-container-high);
+      color: var(--mat-sys-on-surface-variant);
+      font: var(--mat-sys-label-small);
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -52,5 +83,5 @@ import { MatIconModule } from '@angular/material/icon';
 export class FeaturePlaceholder {
   readonly title = input.required<string>();
   readonly intro = input.required<string>();
-  readonly items = input<readonly string[]>([]);
+  readonly items = input<readonly PlannedFeature[]>([]);
 }

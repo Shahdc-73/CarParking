@@ -1,8 +1,9 @@
-<header class="head">
-  <div>
-    <h1>Parking lots</h1>
-    <p class="intro">Free spots right now, by lot and spot type.</p>
-  </div>
+<app-page-header title="Parking lots" subtitle="See where there is free space right now.">
+  @if (state(); as s) {
+    @if (s.status === 'ready') {
+      <span class="updated">Updated {{ s.updatedAt | date: 'shortTime' }}</span>
+    }
+  }
   <button
     mat-stroked-button
     type="button"
@@ -12,7 +13,7 @@
     <mat-icon aria-hidden="true">refresh</mat-icon>
     Refresh
   </button>
-</header>
+</app-page-header>
 
 @switch (state().status) {
   @case ('loading') {
@@ -35,53 +36,108 @@
             message="An administrator needs to add a lot first."
           />
         } @else {
+          <section class="summary" aria-label="Summary of all open lots">
+            <div class="stat primary">
+              <mat-icon aria-hidden="true">local_parking</mat-icon>
+              <div>
+                <strong>{{ summary().freeNow }}</strong>
+                <span>free spots now</span>
+              </div>
+            </div>
+            <div class="stat">
+              <mat-icon aria-hidden="true">garage</mat-icon>
+              <div>
+                <strong>{{ summary().openLots }}</strong>
+                <span>{{ summary().openLots === 1 ? 'lot open' : 'lots open' }}</span>
+              </div>
+            </div>
+            <div class="stat">
+              <mat-icon aria-hidden="true">grid_view</mat-icon>
+              <div>
+                <strong>{{ summary().totalSpots }}</strong>
+                <span>spots in total</span>
+              </div>
+            </div>
+          </section>
+
           <ul class="grid">
             @for (o of s.lots; track o.lot.id) {
-              <li>
-                <mat-card appearance="outlined" [class.inactive]="!o.lot.isActive">
-                  <mat-card-header>
-                    <mat-card-title>{{ o.lot.name }}</mat-card-title>
-                    <mat-card-subtitle>{{ o.lot.address }}</mat-card-subtitle>
-                  </mat-card-header>
-                  <mat-card-content>
-                    @if (!o.lot.isActive) {
-                      <p class="closed"><mat-icon aria-hidden="true">block</mat-icon> Closed</p>
-                    }
-                    <p class="headline">
-                      <strong>{{ o.availability.totals.available }}</strong>
-                      <span> free of {{ o.availability.totals.total }}</span>
-                    </p>
-                    <mat-progress-bar
-                      mode="determinate"
-                      [value]="occupancy(o)"
-                      [attr.aria-label]="o.lot.name + ' is ' + occupancy(o) + ' percent full'"
-                    />
-                    <table class="types">
-                      <caption class="visually-hidden">
-                        Free spots by type in
-                        {{
-                          o.lot.name
-                        }}
-                      </caption>
-                      <thead>
-                        <tr>
-                          <th scope="col">Type</th>
-                          <th scope="col">Free</th>
-                          <th scope="col">Total</th>
+              @let totals = o.availability.totals;
+              @let fill = o.lot.isActive ? status(totals.total, totals.available) : null;
+              <li class="lot" [class.closed]="!o.lot.isActive">
+                <div class="lot-head">
+                  <span class="lot-icon" aria-hidden="true"><mat-icon>garage</mat-icon></span>
+                  <div class="lot-title">
+                    <h2>{{ o.lot.name }}</h2>
+                    <p>{{ o.lot.address }}</p>
+                  </div>
+                  @if (fill) {
+                    <span class="chip" [attr.data-level]="fill.level">
+                      <mat-icon aria-hidden="true">{{ fill.icon }}</mat-icon>
+                      {{ fill.label }}
+                    </span>
+                  } @else {
+                    <span class="chip" data-level="closed">
+                      <mat-icon aria-hidden="true">block</mat-icon>
+                      Closed
+                    </span>
+                  }
+                </div>
+
+                @if (totals.total === 0) {
+                  <p class="no-spots">No spots have been added to this lot yet.</p>
+                } @else {
+                  <p class="headline">
+                    <strong>{{ totals.available }}</strong>
+                    <span> free of {{ totals.total }} spots</span>
+                  </p>
+                  <mat-progress-bar
+                    mode="determinate"
+                    [value]="percent(totals.total, totals.available)"
+                    [attr.data-level]="fill?.level ?? 'closed'"
+                    [attr.aria-label]="
+                      o.lot.name +
+                      ' is ' +
+                      percent(totals.total, totals.available) +
+                      ' percent full'
+                    "
+                  />
+
+                  <table class="types">
+                    <caption class="visually-hidden">
+                      Free spots by type in
+                      {{
+                        o.lot.name
+                      }}
+                    </caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">Type</th>
+                        <th scope="col">Free</th>
+                        <th scope="col">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (t of o.availability.byType; track t.type) {
+                        <tr [class.none-free]="t.counts.available === 0">
+                          <th scope="row">
+                            <span class="type-label">
+                              <mat-icon aria-hidden="true">{{ typeIcon(t.type) }}</mat-icon>
+                              {{ t.type }}
+                            </span>
+                          </th>
+                          <td>{{ t.counts.available }}</td>
+                          <td>{{ t.counts.total }}</td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        @for (t of o.availability.byType; track t.type) {
-                          <tr>
-                            <th scope="row">{{ t.type }}</th>
-                            <td>{{ t.counts.available }}</td>
-                            <td>{{ t.counts.total }}</td>
-                          </tr>
-                        }
-                      </tbody>
-                    </table>
-                  </mat-card-content>
-                </mat-card>
+                      }
+                    </tbody>
+                  </table>
+                }
+
+                <a mat-stroked-button class="lot-link" [routerLink]="['/lots', o.lot.id]">
+                  <mat-icon aria-hidden="true">grid_view</mat-icon>
+                  View spots
+                </a>
               </li>
             }
           </ul>

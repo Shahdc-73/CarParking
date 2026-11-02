@@ -9,7 +9,7 @@ namespace ParkWise.Api.Controllers;
 
 [Route("api/v1")]
 [Authorize]
-public class LotsController(ILotService lots) : ApiControllerBase
+public class LotsController(ILotService lots, ILotBoardService board) : ApiControllerBase
 {
     // ---- Lots ----
     [HttpGet("lots")]
@@ -46,6 +46,15 @@ public class LotsController(ILotService lots) : ApiControllerBase
     [HttpGet("lots/{id:guid}/availability")]
     public async Task<IActionResult> Availability(Guid id, CancellationToken ct)
         => ToActionResult(await lots.GetAvailabilityAsync(id, ct));
+
+    /// <summary>
+    /// Every spot of the lot with its status. For occupied spots, staff also get who is parked, since when, and the fee so far;
+    /// a driver only gets that for their own vehicle.
+    /// </summary>
+    [HttpGet("lots/{id:guid}/board")]
+    [ProducesResponseType<LotBoardDto>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Board(Guid id, CancellationToken ct)
+        => ToActionResult(await board.GetBoardAsync(id, ct));
 
     // ---- Levels ----
     [HttpPost("lots/{lotId:guid}/levels")]

@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { FeaturePlaceholder } from '../../shared/ui/feature-placeholder';
+import { FeaturePlaceholder, PlannedFeature } from '../../shared/ui/feature-placeholder';
 
 @Component({
   selector: 'app-gate-home',
@@ -7,12 +7,26 @@ import { FeaturePlaceholder } from '../../shared/ui/feature-placeholder';
   template: `<app-feature-placeholder
     title="Gate"
     intro="Check vehicles in and out, and handle lost tickets."
-    [items]="[
-      'Check in by plate number with automatic spot assignment',
-      'Check out with fee preview, payment and receipt',
-      'Lost-ticket handling',
-    ]"
+    [items]="items"
   />`,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class GateHome {}
+export class GateHome {
+  protected readonly items: PlannedFeature[] = [
+    {
+      icon: 'login',
+      title: 'Check in',
+      description: 'Enter a plate number and a spot is assigned automatically.',
+    },
+    {
+      icon: 'logout',
+      title: 'Check out',
+      description: 'See the fee, take payment and print the receipt.',
+    },
+    {
+      icon: 'confirmation_number',
+      title: 'Lost ticket',
+      description: 'Close a session with the flat lost-ticket fee.',
+    },
+  ];
+}

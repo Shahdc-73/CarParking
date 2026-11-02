@@ -1,74 +1,285 @@
-.head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
+.updated {
+  white-space: nowrap;
+}
+
+/* ---- summary strip ---- */
+.summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
 
-h1 {
-  font: var(--mat-sys-headline-medium);
-  margin: 0 0 0.25rem;
-}
-
-.intro {
-  margin: 0;
-  color: var(--mat-sys-on-surface-variant);
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+.stat {
+  display: flex;
+  align-items: center;
   gap: 1rem;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
+  padding: 1rem 1.25rem;
+  border-radius: 1rem;
+  background: var(--mat-sys-surface-container-low);
 
-.inactive {
-  opacity: 0.7;
-}
-
-.headline {
-  margin: 1rem 0 0.5rem;
+  mat-icon {
+    flex: none;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0.5rem;
+    box-sizing: border-box;
+    border-radius: 0.75rem;
+    background: var(--mat-sys-surface-container-highest);
+    color: var(--mat-sys-on-surface-variant);
+    font-size: 1.5rem;
+  }
 
   strong {
-    font: var(--mat-sys-display-small);
+    display: block;
+    font: var(--mat-sys-headline-medium);
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  span {
+    color: var(--mat-sys-on-surface-variant);
+    font: var(--mat-sys-body-medium);
+  }
+
+  &.primary {
+    background: var(--pw-free-bg);
+    color: var(--pw-free-fg);
+
+    mat-icon {
+      background: var(--pw-free-strong);
+      color: var(--pw-free-bg);
+    }
+
+    span {
+      color: inherit;
+      opacity: 0.85;
+    }
   }
 }
 
-.closed {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  margin: 0.5rem 0 0;
-  color: var(--mat-sys-error);
+@media (max-width: 599.98px) {
+  .summary {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
+
+  .stat {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+    padding: 0.75rem;
+
+    mat-icon {
+      display: none;
+    }
+
+    strong {
+      font: var(--mat-sys-headline-small);
+    }
+
+    span {
+      font: var(--mat-sys-body-small);
+    }
+  }
 }
 
+/* ---- lot cards ---- */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 1rem;
+  background: var(--mat-sys-surface-container-lowest);
+
+  &.closed {
+    background: var(--mat-sys-surface-container-low);
+
+    .lot-title,
+    .headline,
+    .types {
+      opacity: 0.65;
+    }
+  }
+}
+
+.lot-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.lot-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}
+
+.lot-title {
+  flex: 1 1 auto;
+  min-width: 0;
+
+  h2 {
+    margin: 0;
+    font: var(--mat-sys-title-medium);
+    overflow-wrap: anywhere;
+  }
+
+  p {
+    margin: 0.125rem 0 0;
+    color: var(--mat-sys-on-surface-variant);
+    font: var(--mat-sys-body-small);
+    overflow-wrap: anywhere;
+  }
+}
+
+/* Status chip: icon + text + colour, so it never relies on colour alone. */
+.chip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem 0.25rem 0.5rem;
+  border-radius: 999px;
+  font: var(--mat-sys-label-medium);
+  white-space: nowrap;
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface-variant);
+
+  mat-icon {
+    width: 1.125rem;
+    height: 1.125rem;
+    font-size: 1.125rem;
+  }
+
+  &[data-level='plenty'] {
+    background: var(--pw-free-bg);
+    color: var(--pw-free-fg);
+  }
+
+  &[data-level='busy'] {
+    background: var(--pw-reserved-bg);
+    color: var(--pw-reserved-fg);
+  }
+
+  &[data-level='almost-full'],
+  &[data-level='full'] {
+    background: var(--pw-occupied-bg);
+    color: var(--pw-occupied-fg);
+  }
+}
+
+.headline {
+  margin: 0.25rem 0 0;
+
+  strong {
+    font: var(--mat-sys-display-small);
+    font-variant-numeric: tabular-nums;
+  }
+
+  span {
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.no-spots {
+  margin: 0.5rem 0 0;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background: var(--mat-sys-surface-container-low);
+  color: var(--mat-sys-on-surface-variant);
+  text-align: center;
+}
+
+mat-progress-bar {
+  --mat-progress-bar-track-shape: 999px;
+  --mat-progress-bar-active-indicator-shape: 999px;
+  --mat-progress-bar-track-height: 0.5rem;
+  --mat-progress-bar-active-indicator-height: 0.5rem;
+  border-radius: 999px;
+
+  &[data-level='plenty'] {
+    --mat-progress-bar-active-indicator-color: var(--pw-free-strong);
+  }
+
+  &[data-level='busy'] {
+    --mat-progress-bar-active-indicator-color: var(--pw-reserved-strong);
+  }
+
+  &[data-level='almost-full'],
+  &[data-level='full'] {
+    --mat-progress-bar-active-indicator-color: var(--pw-occupied-strong);
+  }
+
+  &[data-level='closed'] {
+    --mat-progress-bar-active-indicator-color: var(--mat-sys-outline);
+  }
+}
+
+/* ---- per-type table ---- */
 .types {
   width: 100%;
-  margin-top: 1rem;
+  margin-top: 0.5rem;
   border-collapse: collapse;
 
   th,
   td {
-    padding: 0.25rem 0;
+    padding: 0.5rem 0;
+    border-top: 1px solid var(--mat-sys-outline-variant);
     text-align: left;
     font-weight: 400;
   }
 
   thead th {
-    font: var(--mat-sys-label-medium);
+    border-top: 0;
+    padding-bottom: 0.25rem;
     color: var(--mat-sys-on-surface-variant);
+    font: var(--mat-sys-label-medium);
   }
 
-  td {
+  .type-label {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+
+    mat-icon {
+      width: 1.25rem;
+      height: 1.25rem;
+      font-size: 1.25rem;
+      color: var(--mat-sys-on-surface-variant);
+    }
+  }
+
+  td,
+  thead th:not(:first-child) {
+    width: 4rem;
     text-align: right;
     font-variant-numeric: tabular-nums;
   }
 
-  thead th:not(:first-child) {
-    text-align: right;
+  tr.none-free td:first-of-type {
+    color: var(--mat-sys-error);
+    font-weight: 500;
   }
+}
+
+.lot-link {
+  align-self: flex-start;
+  margin-top: auto;
 }

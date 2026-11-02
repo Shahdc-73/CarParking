@@ -11,6 +11,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map, skip } from 'rxjs';
 import { AuthService } from '../core/auth/auth.service';
+import { initials, primaryRole } from '../core/auth/user-display';
 import { navItemsFor } from './nav-items';
 
 @Component({
@@ -55,6 +56,9 @@ export class Shell {
       )
       .subscribe(() => this.document.getElementById('main')?.focus());
   }
+
+  protected readonly initialsOf = initials;
+  protected readonly roleOf = primaryRole;
 
   protected closeIfHandset(nav: MatSidenav): void {
     if (this.isHandset()) void nav.close();

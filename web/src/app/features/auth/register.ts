@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Router, RouterLink } from '@angular/router';
@@ -11,18 +11,20 @@ import { homeFor } from '../../core/auth/auth.guards';
 import { AuthService } from '../../core/auth/auth.service';
 import { applyFieldErrors, passwordStrength } from '../../shared/forms';
 import { ErrorBanner } from '../../shared/ui/status';
+import { AuthLayout } from './auth-layout';
 
 @Component({
   selector: 'app-register',
   imports: [
     ReactiveFormsModule,
     RouterLink,
-    MatCardModule,
     MatFormFieldModule,
+    MatIconModule,
     MatInputModule,
     MatButtonModule,
     MatProgressSpinnerModule,
     ErrorBanner,
+    AuthLayout,
   ],
   templateUrl: './register.html',
   styleUrl: './auth-card.scss',
@@ -37,6 +39,7 @@ export class Register {
     email: ['', [Validators.required, Validators.email, Validators.maxLength(256)]],
     password: ['', [Validators.required, passwordStrength, Validators.maxLength(100)]],
   });
+  protected readonly showPassword = signal(false);
   protected readonly submitting = signal(false);
   protected readonly error = signal<string | null>(null);
 

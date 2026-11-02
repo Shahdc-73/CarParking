@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Observable, Subject, of, throwError } from 'rxjs';
+import { provideRouter } from '@angular/router';
 import { vi } from 'vitest';
 import { LotOverview } from './parking.models';
 import { ParkingService } from './parking.service';
@@ -43,7 +44,7 @@ describe('LotsOverview', () => {
     getOverview = vi.fn().mockReturnValue(source);
     await TestBed.configureTestingModule({
       imports: [LotsOverview],
-      providers: [{ provide: ParkingService, useValue: { getOverview } }],
+      providers: [provideRouter([]), { provide: ParkingService, useValue: { getOverview } }],
     }).compileComponents();
     fixture = TestBed.createComponent(LotsOverview);
     el = fixture.nativeElement;
@@ -105,5 +106,63 @@ describe('LotsOverview', () => {
     expect(el.querySelector('[role=alert]')).toBeNull();
     expect(el.textContent).toContain('Airport');
     expect(getOverview).toHaveBeenCalledTimes(2);
+  });
+
+  const stat = (index: number) => {
+    const node = el.querySelectorAll('.stat')[index];
+    return {
+      value: node.querySelector('strong')?.textContent,
+      label: node.querySelector('span')?.textContent,
+    };
+  };
+
+  it('summarises only the OPEN lots at the top', async () => {
+    await create(
+      of([overview('A', 10, 20), overview('B', 5, 10), overview('Closed', 99, 99, false)]),
+    );
+
+    expect(stat(0)).toEqual({ value: '15', label: 'free spots now' });
+    expect(stat(1)).toEqual({ value: '2', label: 'lots open' });
+    expect(stat(2)).toEqual({ value: '30', label: 'spots in total' });
+  });
+
+  it('uses the singular for a single open lot', async () => {
+    await create(of([overview('Only', 1, 2)]));
+    expect(stat(1)).toEqual({ value: '1', label: 'lot open' });
+  });
+
+  it('labels each lot with a status chip that has text, not just colour', async () => {
+    await create(
+      of([overview('Quiet', 9, 10), overview('Packed', 1, 10), overview('Full', 0, 10)]),
+    );
+
+    const chips = [...el.querySelectorAll('.chip')].map((c) =>
+      c.textContent!.replace(/\s+/g, ' ').trim(),
+    );
+    expect(chips).toEqual([
+      expect.stringContaining('Plenty of space'),
+      expect.stringContaining('Almost full'),
+      expect.stringContaining('Full'),
+    ]);
+  });
+
+  it('shows a clear message instead of an empty table for a lot with no spots', async () => {
+    await create(of([overview('Brand new', 0, 0)]));
+
+    expect(el.textContent).toContain('No spots have been added to this lot yet.');
+    expect(el.querySelector('table')).toBeNull();
+    expect(el.querySelector('.chip')?.textContent).toContain('No spots yet');
+  });
+
+  it('shows when the data was last updated', async () => {
+    await create(of([overview('Airport', 5, 10)]));
+    expect(el.querySelector('.updated')?.textContent).toMatch(/^Updated \d{1,2}:\d{2}/);
+  });
+
+  it('links each lot to its spot board', async () => {
+    await create(of([overview('Downtown Garage', 12, 32)]));
+    const link = el.querySelector<HTMLAnchorElement>('a.lot-link')!;
+    expect(link.getAttribute('href')).toBe('/lots/Downtown%20Garage'); // the test uses the lot name as its id
+    expect(link.textContent).toContain('View spots');
   });
 });

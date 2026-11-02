@@ -43,6 +43,7 @@ Angular (standalone, signals, typed reactive forms, Material) in `web/`. xUnit +
 - `returnUrl` must go through `safeReturnUrl` (open-redirect protection). API errors go through `toApiError` (never show raw server text for 5xx).
 - The browser talks to ONE origin: `ng serve` proxies `/api` to localhost:5080 (`proxy.conf.json`), nginx does the same in Docker. No CORS, cookie stays same-site.
 - Production HTML must stay CSP-clean (no inline scripts/handlers): `npm run build:prod` runs `scripts/verify-csp.mjs`; keep `styles.inlineCritical=false`.
+- Spot colours are CSS tokens in `styles.scss` (`--pw-free-*` green, `--pw-occupied-*` red, `--pw-reserved-*` amber, via `light-dark()`); always shown with an icon AND a word. The lot board (`/lots/:id`, `GET /lots/{id}/board`) ticks timers from ONE signal, corrects for browser clock skew with the server's `generatedAtUtc`, refreshes every 30 s (not while the tab is hidden) and clears its timers on destroy. The server redacts occupancy (plate, times, fee) for anyone except staff and the vehicle's owner.
 - a11y: every input has a label, errors use `role=alert`/`mat-error`, skip link, focus moves to `<main>` on navigation, tables have captions.
 - Commands (Node lives in `~/.local/node/bin` if not on PATH): `cd web && npm ci && npm start` (needs the API on :5080), `npm test -- --watch=false`, `npm run build:prod`.
 

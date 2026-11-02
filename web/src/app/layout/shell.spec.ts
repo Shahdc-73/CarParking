@@ -89,4 +89,27 @@ describe('Shell', () => {
     expect(logout).toHaveBeenCalled();
     expect(navigate).toHaveBeenCalledWith(['/login']);
   });
+
+  it('shows the avatar initials and the role next to the name', () => {
+    current.set(attendant);
+    render();
+    const button = el.querySelector('.user-button')!;
+    expect(button.querySelector('.avatar')?.textContent).toBe('SA');
+    expect(button.querySelector('.user-role')?.textContent).toBe('Attendant');
+    expect(button.querySelector('.avatar')?.getAttribute('aria-hidden')).toBe('true'); // decorative; the name is already read
+  });
+
+  it('marks the current page in the navigation for assistive technology', async () => {
+    current.set(driver);
+    TestBed.inject(Router).resetConfig([
+      { path: 'lots', component: Shell },
+      { path: '**', component: Shell },
+    ]);
+    render();
+    await TestBed.inject(Router).navigateByUrl('/lots');
+    fixture.detectChanges();
+
+    const current$ = el.querySelector('nav a[aria-current="page"]');
+    expect(current$?.textContent).toContain('Parking lots');
+  });
 });

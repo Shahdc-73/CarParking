@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, forkJoin, map, of, switchMap } from 'rxjs';
 import { API_BASE_URL } from '../../core/api/api.config';
-import { Lot, LotAvailability, LotOverview, PagedResult } from './parking.models';
+import { Lot, LotAvailability, LotBoard, LotOverview, PagedResult } from './parking.models';
 
 @Injectable({ providedIn: 'root' })
 export class ParkingService {
@@ -17,6 +17,10 @@ export class ParkingService {
 
   getAvailability(lotId: string): Observable<LotAvailability> {
     return this.http.get<LotAvailability>(`${this.base}/lots/${lotId}/availability`);
+  }
+
+  getBoard(lotId: string): Observable<LotBoard> {
+    return this.http.get<LotBoard>(`${this.base}/lots/${lotId}/board`);
   }
 
   /** Every lot with its live counts. One request for the list, then the availability calls run in parallel. */

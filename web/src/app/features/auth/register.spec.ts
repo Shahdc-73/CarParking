@@ -121,4 +121,23 @@ describe('Register', () => {
     );
     expect(navigateByUrl).not.toHaveBeenCalled();
   });
+
+  it('lets the user reveal and hide the password, announcing the state to screen readers', async () => {
+    const input = el.querySelector<HTMLInputElement>('input[formControlName=password]')!;
+    const toggle = el.querySelector<HTMLButtonElement>('button[aria-pressed]')!;
+    expect(input.type).toBe('password');
+    expect(toggle.getAttribute('aria-label')).toBe('Show password');
+    expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    expect(toggle.type).toBe('button'); // must never submit the form
+
+    toggle.click();
+    fixture.detectChanges();
+    expect(input.type).toBe('text');
+    expect(toggle.getAttribute('aria-label')).toBe('Hide password');
+    expect(toggle.getAttribute('aria-pressed')).toBe('true');
+
+    toggle.click();
+    fixture.detectChanges();
+    expect(input.type).toBe('password');
+  });
 });

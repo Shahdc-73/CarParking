@@ -61,3 +61,23 @@ public interface ISpotService
     Task<Result<SpotDto>> SetServiceAsync(Guid id, bool inService, CancellationToken ct);
     Task<Result> DeleteAsync(Guid id, CancellationToken ct);
 }
+
+// ---- Live board: every spot of a lot, with who is parked and for how long ----
+
+/// <summary>Only filled in for Occupied spots, and only for staff or for the driver's own vehicle (see LotBoardService).</summary>
+/// <param name="FeeSoFar">The fee if the vehicle left right now (null if no price is configured).</param>
+/// <param name="FreeMinutes">Length of the free period of this spot type, so the UI can show "free for 12:30 more".</param>
+public sealed record SpotOccupancyDto(Guid SessionId, DateTime CheckInAtUtc, string PlateNumber, decimal? FeeSoFar, int? FreeMinutes, bool IsMine);
+
+/// <param name="HoldExpiresAtUtc">While a reservation is holding the spot (staff only): when the hold ends.</param>
+public sealed record BoardSpotDto(Guid Id, string Code, SpotType Type, SpotStatus Status, SpotOccupancyDto? Occupancy, DateTime? HoldExpiresAtUtc);
+
+public sealed record BoardLevelDto(Guid Id, int Number, string Name, IReadOnlyList<BoardSpotDto> Spots);
+
+/// <param name="GeneratedAtUtc">The SERVER's clock when this was produced. The browser uses it to correct for its own clock being wrong.</param>
+public sealed record LotBoardDto(Guid LotId, string LotName, bool IsActive, DateTime GeneratedAtUtc, AvailabilityCounts Totals, IReadOnlyList<BoardLevelDto> Levels);
+
+public interface ILotBoardService
+{
+    Task<Result<LotBoardDto>> GetBoardAsync(Guid lotId, CancellationToken ct);
+}

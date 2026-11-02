@@ -33,6 +33,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/parking/lots-overview').then((m) => m.LotsOverview),
       },
       {
+        path: 'lots/:id',
+        title: 'Parking spots · ParkWise',
+        loadComponent: () => import('./features/parking/lot-board').then((m) => m.LotBoardPage),
+      },
+      {
         path: 'gate',
         title: 'Gate · ParkWise',
         canActivate: [roleGuard('Admin', 'Attendant')],

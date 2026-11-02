@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { FeaturePlaceholder } from '../../shared/ui/feature-placeholder';
+import { FeaturePlaceholder, PlannedFeature } from '../../shared/ui/feature-placeholder';
 
 @Component({
   selector: 'app-admin-home',
@@ -7,13 +7,31 @@ import { FeaturePlaceholder } from '../../shared/ui/feature-placeholder';
   template: `<app-feature-placeholder
     title="Administration"
     intro="Manage lots, pricing and users, and see reports."
-    [items]="[
-      'Lots, levels and spots',
-      'Pricing rules',
-      'Users and roles',
-      'Occupancy, revenue and peak-hour reports, plus the audit log',
-    ]"
+    [items]="items"
   />`,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AdminHome {}
+export class AdminHome {
+  protected readonly items: PlannedFeature[] = [
+    {
+      icon: 'warehouse',
+      title: 'Lots and spots',
+      description: 'Add lots, levels and spots, and take spots out of service.',
+    },
+    {
+      icon: 'payments',
+      title: 'Pricing',
+      description: 'Hourly rates, daily caps, free minutes and the lost-ticket fee.',
+    },
+    {
+      icon: 'group',
+      title: 'Users',
+      description: 'Create attendants and admins, and deactivate accounts.',
+    },
+    {
+      icon: 'monitoring',
+      title: 'Reports and audit log',
+      description: 'Occupancy, revenue, peak hours, and who changed what.',
+    },
+  ];
+}
