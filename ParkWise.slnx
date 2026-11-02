@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ParkWise.Api/ParkWise.Api.csproj" />
+    <Project Path="src/ParkWise.Application/ParkWise.Application.csproj" />
+    <Project Path="src/ParkWise.Domain/ParkWise.Domain.csproj" />
+    <Project Path="src/ParkWise.Infrastructure/ParkWise.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ParkWise.Api.IntegrationTests/ParkWise.Api.IntegrationTests.csproj" />
+    <Project Path="tests/ParkWise.Application.Tests/ParkWise.Application.Tests.csproj" />
+    <Project Path="tests/ParkWise.Domain.Tests/ParkWise.Domain.Tests.csproj" />
+  </Folder>
+</Solution>
