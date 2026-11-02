@@ -158,6 +158,21 @@ public sealed class Arrange(ApiFactory factory)
         await db.SaveChangesAsync();
     });
 
+    /// <summary>
+    /// Writes a finished, paid parking session with exact historical times (the API cannot back-date). Used to test reports.
+    /// </summary>
+    public Task AddHistoryAsync(Guid spotId, Guid vehicleId, DateTime checkInUtc, DateTime checkOutUtc, decimal amount, bool lostTicket = false)
+        => WithDbAsync(async db =>
+        {
+            var session = new ParkingSession(vehicleId, spotId, $"TK-{Guid.NewGuid():N}"[..20], checkInUtc, Guid.NewGuid());
+            session.CheckOut(checkOutUtc, lostTicket);
+            session.AttachSettlement(
+                new Payment(session.Id, amount, null, checkOutUtc),
+                new Receipt(session.Id, $"RC-TEST-{Guid.NewGuid():N}"[..24], amount, "{}", checkOutUtc));
+            db.Sessions.Add(session);
+            await db.SaveChangesAsync();
+        });
+
     public Task AddPendingReservationAsync(Guid spotId, Guid vehicleId) => WithDbAsync(async db =>
     {
         var now = DateTime.UtcNow;

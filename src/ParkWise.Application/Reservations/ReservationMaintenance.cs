@@ -9,7 +9,7 @@ namespace ParkWise.Application.Reservations;
 /// What the background job does each tick. It is state-based and idempotent: it looks at what is true NOW and fixes it,
 /// so it does not matter if a tick is late, skipped, or two API instances run it at the same time.
 /// </summary>
-public sealed class ReservationMaintenance(IAppDbContext db, IAuditLogger audit, TimeProvider clock) : IReservationMaintenance
+public sealed class ReservationMaintenance(IAppDbContext db, IAuditLogger audit, IAvailabilityNotifier notifier, TimeProvider clock) : IReservationMaintenance
 {
     private const string Entity = nameof(Reservation);
     private const int BatchSize = 200;
@@ -40,11 +40,13 @@ public sealed class ReservationMaintenance(IAppDbContext db, IAuditLogger audit,
                 if (!reservation.TryExpire(now)) return false;
 
                 var spot = await db.Spots.SingleAsync(s => s.Id == reservation.SpotId, ct);
-                if (spot.Status == SpotStatus.Reserved) spot.Release();
+                var released = spot.Status == SpotStatus.Reserved;
+                if (released) spot.Release();
 
                 audit.Log("Reservation.Expired", Entity, reservation.Id,
                     before: new { Status = ReservationStatus.Pending }, after: new { reservation.Status, reservation.HoldExpiresAtUtc });
                 await db.SaveChangesAsync(ct);
+                if (released) await notifier.LotChangedAsync(await LotOfAsync(spot, ct), ct);
                 return true;
             })) count++;
         }
@@ -80,6 +82,7 @@ public sealed class ReservationMaintenance(IAppDbContext db, IAuditLogger audit,
                 {
                     spot.Reserve();
                     await db.SaveChangesAsync(ct);
+                    await notifier.LotChangedAsync(await LotOfAsync(spot, ct), ct);
                     started++;
                     return true;
                 }
@@ -97,6 +100,7 @@ public sealed class ReservationMaintenance(IAppDbContext db, IAuditLogger audit,
                     audit.Log("Reservation.Reassigned", Entity, reservation.Id,
                         before: new { SpotId = oldSpotId, spot.Code, Reason = spot.Status }, after: new { SpotId = replacement.Id, replacement.Code });
                     await db.SaveChangesAsync(ct);
+                    await notifier.LotChangedAsync(lotId, ct);
                     reassigned++;
                 }
                 else
@@ -114,6 +118,9 @@ public sealed class ReservationMaintenance(IAppDbContext db, IAuditLogger audit,
 
         return (started, reassigned, cancelled);
     }
+
+    private Task<Guid> LotOfAsync(Spot spot, CancellationToken ct)
+        => db.Levels.Where(l => l.Id == spot.LevelId).Select(l => l.LotId).SingleAsync(ct);
 
     /// <summary>Runs one unit of work; if it loses a race (another request or instance changed the same rows) it is skipped and retried next tick.</summary>
     private async Task<bool> TryAsync(Func<Task<bool>> work)

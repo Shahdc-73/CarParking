@@ -1,0 +1,123 @@
+<form class="filters" (ngSubmit)="load()" aria-label="Report range">
+  <mat-form-field>
+    <mat-label>From</mat-label>
+    <input matInput type="date" name="from" [ngModel]="from()" (ngModelChange)="from.set($event)" />
+  </mat-form-field>
+  <mat-form-field>
+    <mat-label>To</mat-label>
+    <input matInput type="date" name="to" [ngModel]="to()" (ngModelChange)="to.set($event)" />
+  </mat-form-field>
+  <mat-form-field>
+    <mat-label>Lot</mat-label>
+    <mat-select name="lot" [ngModel]="lotId()" (ngModelChange)="lotId.set($event)">
+      <mat-option value="">All lots</mat-option>
+      @for (l of lots(); track l.id) {
+        <mat-option [value]="l.id">{{ l.name }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <button mat-flat-button type="submit" [disabled]="!!rangeInvalid() || loading()">Show</button>
+</form>
+@if (rangeInvalid(); as problem) {
+  <p class="problem" role="alert">{{ problem }}</p>
+}
+
+@if (loading()) {
+  <app-loading label="Loading reports" />
+}
+@if (error(); as message) {
+  <app-error-banner [message]="message" (retry)="load()" />
+}
+
+@if (occupancy(); as o) {
+  <section aria-label="Occupancy now">
+    <h2>Occupancy now</h2>
+    <p class="big">
+      <strong>{{ o.overall.occupancyRate | percent: '1.0-0' }}</strong>
+      of usable spots are taken ({{ o.overall.occupied }} occupied,
+      {{ o.overall.reserved }} reserved, {{ o.overall.available }} free,
+      {{ o.overall.outOfService }} out of service)
+    </p>
+    <table class="lots">
+      <caption class="visually-hidden">
+        Occupancy per lot
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">Lot</th>
+          <th scope="col">Occupied</th>
+          <th scope="col">Free</th>
+          <th scope="col">Taken</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (l of o.lots; track l.lotId) {
+          <tr>
+            <th scope="row">
+              {{ l.lotName }}
+              @if (!l.isActive) {
+                (closed)
+              }
+            </th>
+            <td>{{ l.occupied }} / {{ l.total }}</td>
+            <td>{{ l.available }}</td>
+            <td>
+              <mat-progress-bar
+                mode="determinate"
+                [value]="l.occupancyRate * 100"
+                [attr.aria-label]="l.lotName + ' taken'"
+              />
+              {{ l.occupancyRate | percent: '1.0-0' }}
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </section>
+}
+
+@if (performance(); as p) {
+  <section aria-label="Performance in the chosen range">
+    <h2>{{ p.from }} to {{ p.to }}</h2>
+    <div class="stats">
+      <div>
+        <strong>{{ p.totalRevenue | number: '1.2-2' }}</strong
+        ><span>revenue</span>
+      </div>
+      <div>
+        <strong>{{ p.paidSessions }}</strong
+        ><span>paid sessions</span>
+      </div>
+      <div>
+        <strong>{{ p.checkIns }}</strong
+        ><span>check-ins</span>
+      </div>
+      <div>
+        <strong>{{ p.lostTickets }}</strong
+        ><span>lost tickets</span>
+      </div>
+      <div>
+        <strong>{{ duration(p.averageStayMinutes) }}</strong
+        ><span>average stay</span>
+      </div>
+      <div>
+        <strong>{{ duration(p.longestStayMinutes) }}</strong
+        ><span>longest stay</span>
+      </div>
+    </div>
+    <div class="charts">
+      <app-bar-chart
+        title="Revenue per day"
+        labelHeader="Day"
+        valueHeader="Revenue"
+        [bars]="revenueBars()"
+      />
+      <app-bar-chart
+        title="Check-ins by hour of day"
+        labelHeader="Hour"
+        valueHeader="Check-ins"
+        [bars]="peakBars()"
+      />
+    </div>
+  </section>
+}

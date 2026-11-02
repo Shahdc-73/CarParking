@@ -5,7 +5,7 @@ using ParkWise.Domain.Enums;
 
 namespace ParkWise.Application.Parking;
 
-public sealed class LotService(IAppDbContext db, IAuditLogger audit) : ILotService
+public sealed class LotService(IAppDbContext db, IAuditLogger audit, IAvailabilityNotifier notifier) : ILotService
 {
     private const string LotEntity = "ParkingLot";
     private const string LevelEntity = "Level";
@@ -76,6 +76,7 @@ public sealed class LotService(IAppDbContext db, IAuditLogger audit) : ILotServi
         lot.Update(request.Name, request.Address, request.AllowMotorcycleOverflow);
         audit.Log("Lot.Updated", LotEntity, lot.Id, before, Snapshot(lot));
         await db.SaveChangesAsync(ct);
+        await notifier.LotChangedAsync(lot.Id, ct);
 
         return await CountsFor(lot, ct);
     }
@@ -99,6 +100,7 @@ public sealed class LotService(IAppDbContext db, IAuditLogger audit) : ILotServi
         if (isActive) lot.Activate(); else lot.Deactivate();
         audit.Log(isActive ? "Lot.Activated" : "Lot.Deactivated", LotEntity, lot.Id, before, Snapshot(lot));
         await db.SaveChangesAsync(ct);
+        await notifier.LotChangedAsync(lot.Id, ct);
         return Result.Success();
     }
 
@@ -114,6 +116,7 @@ public sealed class LotService(IAppDbContext db, IAuditLogger audit) : ILotServi
         audit.Log("Lot.Deleted", LotEntity, lot.Id, before: Snapshot(lot));
         db.Lots.Remove(lot); // levels and spots go with it (cascade delete in the database)
         await db.SaveChangesAsync(ct);
+        await notifier.LotChangedAsync(id, ct);
         return Result.Success();
     }
 
@@ -128,6 +131,7 @@ public sealed class LotService(IAppDbContext db, IAuditLogger audit) : ILotServi
         var level = lot.AddLevel(request.Number, request.Name);
         audit.Log("Level.Created", LevelEntity, level.Id, after: new { lotId, level.Number, level.Name });
         await db.SaveChangesAsync(ct);
+        await notifier.LotChangedAsync(lotId, ct);
 
         return new LevelDto(level.Id, lotId, level.Number, level.Name, 0);
     }
@@ -141,6 +145,7 @@ public sealed class LotService(IAppDbContext db, IAuditLogger audit) : ILotServi
         level.Rename(request.Name);
         audit.Log("Level.Updated", LevelEntity, level.Id, before, new { level.Number, level.Name });
         await db.SaveChangesAsync(ct);
+        await notifier.LotChangedAsync(level.LotId, ct);
 
         var spotCount = await db.Spots.CountAsync(s => s.LevelId == levelId, ct);
         return new LevelDto(level.Id, level.LotId, level.Number, level.Name, spotCount);
@@ -158,6 +163,7 @@ public sealed class LotService(IAppDbContext db, IAuditLogger audit) : ILotServi
         audit.Log("Level.Deleted", LevelEntity, level.Id, before: new { level.LotId, level.Number, level.Name });
         db.Levels.Remove(level);
         await db.SaveChangesAsync(ct);
+        await notifier.LotChangedAsync(level.LotId, ct);
         return Result.Success();
     }
 

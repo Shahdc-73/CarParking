@@ -10,7 +10,7 @@ import { PageHeader } from '../../shared/ui/page-header';
   template: `
     <app-page-header
       title="Administration"
-      subtitle="Manage lots, pricing and users, and review changes."
+      subtitle="See how the lots perform, manage lots, pricing and users, and review changes."
     />
 
     <nav mat-tab-nav-bar [tabPanel]="panel" aria-label="Administration sections">
@@ -39,6 +39,7 @@ import { PageHeader } from '../../shared/ui/page-header';
 })
 export class AdminHome {
   protected readonly tabs = [
+    { path: 'dashboard', label: 'Dashboard' },
     { path: 'lots', label: 'Lots and spots' },
     { path: 'pricing', label: 'Pricing' },
     { path: 'users', label: 'Users' },

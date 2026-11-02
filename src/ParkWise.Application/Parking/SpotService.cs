@@ -4,7 +4,7 @@ using ParkWise.Domain.Enums;
 
 namespace ParkWise.Application.Parking;
 
-public sealed class SpotService(IAppDbContext db, IAuditLogger audit) : ISpotService
+public sealed class SpotService(IAppDbContext db, IAuditLogger audit, IAvailabilityNotifier notifier) : ISpotService
 {
     private const string SpotEntity = "Spot";
     private static readonly Error SpotNotFound = Error.NotFound("spots.not_found", "Spot not found.");
@@ -63,6 +63,7 @@ public sealed class SpotService(IAppDbContext db, IAuditLogger audit) : ISpotSer
         var spot = level.AddSpot(request.Code, request.Type);
         audit.Log("Spot.Created", SpotEntity, spot.Id, after: new { levelId, spot.Code, spot.Type });
         await db.SaveChangesAsync(ct);
+        await notifier.LotChangedAsync(level.LotId, ct);
 
         return (await ProjectAsync(spot.Id, ct))!;
     }
@@ -89,6 +90,7 @@ public sealed class SpotService(IAppDbContext db, IAuditLogger audit) : ISpotSer
         spot.Rename(request.Code);
         audit.Log("Spot.Updated", SpotEntity, spot.Id, before, new { spot.Code, spot.Type });
         await db.SaveChangesAsync(ct);
+        await notifier.LotChangedAsync(await LotOfLevelAsync(spot.LevelId, ct), ct);
 
         return (await ProjectAsync(id, ct))!;
     }
@@ -108,6 +110,7 @@ public sealed class SpotService(IAppDbContext db, IAuditLogger audit) : ISpotSer
 
         // The spot's rowversion makes this safe against a concurrent check-in: whoever saves second gets a 409.
         await db.SaveChangesAsync(ct);
+        await notifier.LotChangedAsync(await LotOfLevelAsync(spot.LevelId, ct), ct);
         return (await ProjectAsync(id, ct))!;
     }
 
@@ -119,11 +122,16 @@ public sealed class SpotService(IAppDbContext db, IAuditLogger audit) : ISpotSer
         if (await db.Sessions.AnyAsync(s => s.SpotId == id, ct) || await db.Reservations.AnyAsync(r => r.SpotId == id, ct))
             return Result.Failure(Error.Conflict("spots.has_history", "This spot has parking history and cannot be deleted. Take it out of service instead."));
 
+        var lotId = await LotOfLevelAsync(spot.LevelId, ct);
         audit.Log("Spot.Deleted", SpotEntity, spot.Id, before: new { spot.LevelId, spot.Code, spot.Type });
         db.Spots.Remove(spot);
         await db.SaveChangesAsync(ct);
+        await notifier.LotChangedAsync(lotId, ct);
         return Result.Success();
     }
+
+    private Task<Guid> LotOfLevelAsync(Guid levelId, CancellationToken ct)
+        => db.Levels.Where(l => l.Id == levelId).Select(l => l.LotId).SingleAsync(ct);
 
     private Task<SpotDto?> ProjectAsync(Guid id, CancellationToken ct)
         => (from s in db.Spots.AsNoTracking()

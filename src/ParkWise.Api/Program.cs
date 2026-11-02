@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
+using ParkWise.Api.Hubs;
 using ParkWise.Api.Infrastructure;
 using ParkWise.Application;
 using ParkWise.Application.Common;
@@ -30,6 +31,8 @@ try
     builder.Services.AddHttpContextAccessor();
     builder.Services.AddScoped<ICurrentUser, CurrentUser>();
     builder.Services.AddApplication();
+    builder.Services.AddSignalR();
+    builder.Services.AddSingleton<IAvailabilityNotifier, HubAvailabilityNotifier>(); // replaces the do-nothing default
     builder.Services.AddInfrastructure(builder.Configuration);
     builder.Services.AddJwtAuthentication();
     builder.Services.AddSwaggerWithJwt();
@@ -70,6 +73,7 @@ try
     app.UseAuthorization();
 
     app.MapControllers();
+    app.MapHub<AvailabilityHub>("/hubs/availability");
 
     // Liveness: is the process up? No dependencies, so it never flaps because of the database.
     app.MapHealthChecks("/health", new() { Predicate = _ => false });

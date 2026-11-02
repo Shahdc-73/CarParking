@@ -6,7 +6,8 @@ using ParkWise.Domain.Services;
 
 namespace ParkWise.Application.Reservations;
 
-public sealed class ReservationService(IAppDbContext db, IAuditLogger audit, ICurrentUser currentUser, TimeProvider clock) : IReservationService
+public sealed class ReservationService(IAppDbContext db, IAuditLogger audit, ICurrentUser currentUser, IAvailabilityNotifier notifier, TimeProvider clock)
+    : IReservationService
 {
     private const string Entity = nameof(Reservation);
     private const int MaxAttempts = 4;
@@ -83,6 +84,7 @@ public sealed class ReservationService(IAppDbContext db, IAuditLogger audit, ICu
             reservation.StartUtc, reservation.EndUtc,
         });
         await db.SaveChangesAsync(ct);
+        await notifier.LotChangedAsync(lot.Id, ct);
 
         return (await GetAsync(reservation.Id, ct)).Value;
     }
@@ -129,15 +131,21 @@ public sealed class ReservationService(IAppDbContext db, IAuditLogger audit, ICu
         var holdingSpot = reservation.IsHoldActive(now);
         reservation.Cancel();
 
+        Guid? changedLot = null;
         if (holdingSpot)
         {
             // The spot was being held for this booking: give it back right away.
             var spot = await db.Spots.SingleAsync(s => s.Id == reservation.SpotId, ct);
-            if (spot.Status == SpotStatus.Reserved) spot.Release();
+            if (spot.Status == SpotStatus.Reserved)
+            {
+                spot.Release();
+                changedLot = await db.Levels.Where(l => l.Id == spot.LevelId).Select(l => l.LotId).SingleAsync(ct);
+            }
         }
 
         audit.Log("Reservation.Cancelled", Entity, reservation.Id, before: new { Status = ReservationStatus.Pending }, after: new { reservation.Status });
         await db.SaveChangesAsync(ct);
+        if (changedLot is { } lotId) await notifier.LotChangedAsync(lotId, ct);
         return Result.Success();
     }
 

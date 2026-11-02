@@ -9,6 +9,7 @@
     subtitle="Every spot, live. Green is free, red is taken."
   >
     @if (s.status === 'ready') {
+      <app-live-badge [mode]="mode()" />
       <span class="updated" role="status">
         @if (refreshing()) {
           Refreshing…

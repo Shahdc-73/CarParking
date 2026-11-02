@@ -19,6 +19,19 @@ public static class ServiceCollectionExtensions
             {
                 var o = jwt.Value;
                 bearer.MapInboundClaims = false; // keep claim names as issued: "sub", "role", ...
+
+                // Browsers cannot set an Authorization header on a WebSocket, so SignalR sends the token as ?access_token=...
+                // Accepted ONLY for hub paths; the request logger records the path without the query string, so it is not logged.
+                bearer.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var token = context.Request.Query["access_token"];
+                        if (!string.IsNullOrEmpty(token) && context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+                            context.Token = token;
+                        return Task.CompletedTask;
+                    },
+                };
                 bearer.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,

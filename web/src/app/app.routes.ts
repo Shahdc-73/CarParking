@@ -74,7 +74,13 @@ export const routes: Routes = [
         canActivate: [roleGuard('Admin')],
         loadComponent: () => import('./features/admin/admin-home').then((m) => m.AdminHome),
         children: [
-          { path: '', pathMatch: 'full', redirectTo: 'lots' },
+          { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
+          {
+            path: 'dashboard',
+            title: 'Dashboard · ParkWise',
+            loadComponent: () =>
+              import('./features/admin/admin-dashboard').then((m) => m.AdminDashboard),
+          },
           {
             path: 'lots',
             title: 'Lots · ParkWise',

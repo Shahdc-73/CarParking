@@ -53,4 +53,20 @@ public interface IAuditLogger
     void Log(string action, string entityType, Guid entityId, object? before = null, object? after = null);
 }
 
+/// <summary>
+/// Tells connected browsers "something about this lot changed, re-read it". It carries NO data on purpose: what a person may see
+/// differs by role (a driver must not see other cars' plates), so each browser re-fetches through the normal, authorised API.
+/// Implementations must never throw: a broken real-time channel must not fail a check-in.
+/// </summary>
+public interface IAvailabilityNotifier
+{
+    Task LotChangedAsync(Guid lotId, CancellationToken ct = default);
+}
+
+/// <summary>Used until a real notifier is registered (tests, tools): does nothing.</summary>
+public sealed class NullAvailabilityNotifier : IAvailabilityNotifier
+{
+    public Task LotChangedAsync(Guid lotId, CancellationToken ct = default) => Task.CompletedTask;
+}
+
 public sealed record SetActiveRequest(bool IsActive);

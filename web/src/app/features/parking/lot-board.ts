@@ -12,8 +12,10 @@ import {
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
+import { LiveBadge } from '../../shared/ui/live-badge';
 import { PageHeader } from '../../shared/ui/page-header';
 import { EmptyState, ErrorBanner, Loading } from '../../shared/ui/status';
+import { LiveUpdates } from '../../core/realtime/live-updates';
 import { BoardFeed } from './board-feed';
 import { formatElapsed, freeSecondsLeft, spokenDuration } from './elapsed';
 import { spotTypeIcon } from './occupancy';
@@ -30,6 +32,7 @@ import { ParkingService } from './parking.service';
     MatButtonModule,
     MatIconModule,
     PageHeader,
+    LiveBadge,
     Loading,
     ErrorBanner,
     EmptyState,
@@ -51,6 +54,7 @@ export class LotBoardPage {
   protected readonly state = this.feed.state;
   protected readonly refreshing = this.feed.refreshing;
   protected readonly refreshError = this.feed.refreshError;
+  protected readonly mode = this.feed.mode;
 
   protected readonly viewOf = SPOT_STATUS;
   protected readonly typeIcon = spotTypeIcon;
@@ -59,8 +63,11 @@ export class LotBoardPage {
 
   constructor() {
     effect(() => {
-      this.id(); // reload when navigating from one lot straight to another
-      untracked(() => this.feed.load(false));
+      const id = this.id(); // reload when navigating from one lot straight to another
+      untracked(() => {
+        this.feed.watch(id);
+        this.feed.load(false);
+      });
     });
   }
 

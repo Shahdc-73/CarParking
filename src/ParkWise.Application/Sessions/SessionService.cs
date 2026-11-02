@@ -13,6 +13,7 @@ public sealed class SessionService(
     IPricingService pricing,
     IAuditLogger audit,
     ICurrentUser currentUser,
+    IAvailabilityNotifier notifier,
     TimeProvider clock) : ISessionService
 {
     private const string SessionEntity = "ParkingSession";
@@ -125,6 +126,7 @@ public sealed class SessionService(
         });
 
         await db.SaveChangesAsync(ct); // vehicle + spot + session + audit: one transaction
+        await notifier.LotChangedAsync(lot.Id, ct);
 
         return (await GetAsync(session.Id, ct)).Value;
     }
@@ -203,6 +205,7 @@ public sealed class SessionService(
         await db.SaveChangesAsync(ct);
 
         var dto = await ReceiptRows(visibleOnly: false).SingleAsync(r => r.Receipt.SessionId == session.Id, ct);
+        await notifier.LotChangedAsync(dto.Lot.Id, ct);
         return new CheckOutOutcome(ToDto(dto), Replayed: false);
     }
 

@@ -4,6 +4,7 @@
       <span class="updated">Updated {{ s.updatedAt | date: 'shortTime' }}</span>
     }
   }
+  <app-live-badge [mode]="mode()" />
   <button
     mat-stroked-button
     type="button"

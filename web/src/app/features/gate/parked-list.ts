@@ -19,7 +19,9 @@ import { MatInputModule } from '@angular/material/input';
 import { SessionsApi } from '../../core/api/sessions.api';
 import { toApiError } from '../../core/api/problem-details';
 import { Notify } from '../../core/ui/notify';
+import { LiveBadge } from '../../shared/ui/live-badge';
 import { EmptyState, ErrorBanner, Loading } from '../../shared/ui/status';
+import { LiveUpdates } from '../../core/realtime/live-updates';
 import { BoardFeed } from '../parking/board-feed';
 import { formatElapsed, freeSecondsLeft, spokenDuration } from '../parking/elapsed';
 import { SpotOccupancy } from '../parking/parking.models';
@@ -44,6 +46,7 @@ const TICKET_PATTERN = /^PW-[A-Z0-9]{6}$/i;
     MatInputModule,
     MatButtonModule,
     MatIconModule,
+    LiveBadge,
     Loading,
     ErrorBanner,
     EmptyState,
@@ -73,6 +76,7 @@ export class ParkedList {
   protected readonly state = this.feed.state;
   protected readonly refreshing = this.feed.refreshing;
   protected readonly refreshError = this.feed.refreshError;
+  protected readonly mode = this.feed.mode;
 
   protected readonly query = signal('');
   protected readonly lookingUp = signal(false);
@@ -115,9 +119,12 @@ export class ParkedList {
 
   constructor() {
     effect(() => {
-      this.lotId();
+      const lotId = this.lotId();
       this.refreshKey();
-      untracked(() => this.feed.load(this.state().status === 'ready')); // keep the rows on screen while reloading
+      untracked(() => {
+        this.feed.watch(lotId);
+        this.feed.load(this.state().status === 'ready'); // keep the rows on screen while reloading
+      });
     });
   }
 

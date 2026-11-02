@@ -6,15 +6,18 @@
         <span class="count">{{ total() }}</span>
       }
     </h2>
-    <button
-      mat-icon-button
-      type="button"
-      aria-label="Refresh the list"
-      (click)="load()"
-      [disabled]="refreshing() || state().status === 'loading'"
-    >
-      <mat-icon>refresh</mat-icon>
-    </button>
+    <span class="head-actions">
+      <app-live-badge [mode]="mode()" />
+      <button
+        mat-icon-button
+        type="button"
+        aria-label="Refresh the list"
+        (click)="load()"
+        [disabled]="refreshing() || state().status === 'loading'"
+      >
+        <mat-icon>refresh</mat-icon>
+      </button>
+    </span>
   </div>
 
   <mat-form-field appearance="outline" subscriptSizing="dynamic" class="search">

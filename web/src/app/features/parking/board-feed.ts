@@ -1,5 +1,7 @@
-import { DestroyRef, signal } from '@angular/core';
+import { DestroyRef, computed, signal } from '@angular/core';
+import { Subscription, debounceTime } from 'rxjs';
 import { toApiError } from '../../core/api/problem-details';
+import { LiveUpdates } from '../../core/realtime/live-updates';
 import { LotBoard } from './parking.models';
 import { ParkingService } from './parking.service';
 
@@ -10,9 +12,14 @@ export type BoardState =
 
 const TICK_MS = 1_000;
 const REFRESH_MS = 30_000;
+/** While the live channel is up the poll is only a safety net: it runs every 4th tick (2 minutes). */
+const SAFETY_POLL_EVERY = 4;
+/** A burst of changes (several cars arriving together) becomes ONE reload. */
+const LIVE_DEBOUNCE_MS = 300;
 
 /**
- * A live view of one lot: loads the board, refreshes it every 30 s (not while the tab is hidden), and provides second-by-second
+ * A live view of one lot: loads the board, reloads it the moment the server says the lot changed (SignalR), polls as a fallback
+ * (every 30 s, not while the tab is hidden, and rarely while the live channel is up), and provides second-by-second
  * elapsed times that are correct even if this computer's clock is wrong (they are measured against the SERVER's clock).
  * Shared by the lot board page and the gate's "parked now" list. Timers are removed when the owning component is destroyed.
  */
@@ -27,20 +34,43 @@ export class BoardFeed {
   /** Server clock minus browser clock at the last load. */
   private serverOffsetMs = 0;
 
+  private watching?: Subscription;
+  private ticksSincePoll = 0;
+
+  /** What the UI should say: "Live", "Reconnecting...", or "Updates every 30 seconds" when the channel is not available. */
+  readonly mode = computed<'live' | 'reconnecting' | 'polling'>(() => {
+    const state = this.live?.state();
+    return state === 'connected' ? 'live' : state === 'reconnecting' ? 'reconnecting' : 'polling';
+  });
+
   constructor(
     private readonly parking: ParkingService,
     private readonly lotId: () => string,
     destroyRef: DestroyRef,
+    private readonly live?: LiveUpdates,
   ) {
     const tick = setInterval(() => this.now.set(Date.now()), TICK_MS);
-    // Occupancy changes all day and fees change on the hour, so the board keeps itself fresh.
+    // Fees change on the hour and clocks drift, so the board also refreshes itself even if no message arrives.
     const poll = setInterval(() => {
-      if (!document.hidden) this.load(true);
+      if (document.hidden) return;
+      if (this.live?.isLive() && ++this.ticksSincePoll < SAFETY_POLL_EVERY) return;
+      this.ticksSincePoll = 0;
+      this.load(true);
     }, REFRESH_MS);
     destroyRef.onDestroy(() => {
       clearInterval(tick);
       clearInterval(poll);
+      this.watching?.unsubscribe();
     });
+  }
+
+  /** (Re)starts listening for changes of the given lot. Call it whenever the lot being shown changes. */
+  watch(lotId: string): void {
+    this.watching?.unsubscribe();
+    this.watching = this.live
+      ?.watchLot(lotId)
+      .pipe(debounceTime(LIVE_DEBOUNCE_MS))
+      .subscribe(() => this.load(this.state().status === 'ready'));
   }
 
   load(background: boolean): void {
