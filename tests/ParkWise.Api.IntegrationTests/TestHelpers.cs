@@ -1,6 +1,8 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Mvc.Testing;
 using ParkWise.Application.Auth;
 
@@ -9,6 +11,15 @@ namespace ParkWise.Api.IntegrationTests;
 public static class TestHelpers
 {
     public const string StrongPassword = "Passw0rd123";
+
+    /// <summary>Matches the API: camelCase, enums as strings.</summary>
+    public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web) { Converters = { new JsonStringEnumConverter() } };
+
+    public static Task<HttpResponseMessage> PostJsonAsync(this HttpClient c, string url, object body) => c.PostAsJsonAsync(url, body, Json);
+    public static Task<HttpResponseMessage> PutJsonAsync(this HttpClient c, string url, object body) => c.PutAsJsonAsync(url, body, Json);
+
+    public static async Task<T> ReadAsync<T>(this HttpResponseMessage response)
+        => (await response.Content.ReadFromJsonAsync<T>(Json))!;
 
     public static string NewEmail() => $"user-{Guid.NewGuid():N}@test.local";
 

@@ -70,6 +70,12 @@ public class Level : Entity
 
     public IReadOnlyCollection<Spot> Spots => _spots;
 
+    public void Rename(string name)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        Name = name.Trim();
+    }
+
     public Spot AddSpot(string code, SpotType type)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(code);

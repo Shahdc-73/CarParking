@@ -1,12 +1,13 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using ParkWise.Application.Common;
 using ParkWise.Domain.Entities;
 using ParkWise.Infrastructure.Identity;
 
 namespace ParkWise.Infrastructure.Persistence;
 
 public class AppDbContext(DbContextOptions<AppDbContext> options)
-    : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>(options)
+    : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>(options), IAppDbContext
 {
     public DbSet<ParkingLot> Lots => Set<ParkingLot>();
     public DbSet<Level> Levels => Set<Level>();
@@ -25,6 +26,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     {
         base.OnModelCreating(modelBuilder); // Identity's own tables
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+
+        // Ids are assigned in code (Guid v7), never by the database. Without this EF assumes any entity that already
+        // has a key must exist, so a new child added to a tracked parent would be sent as an UPDATE instead of an INSERT.
+        foreach (var entity in modelBuilder.Model.GetEntityTypes()
+                     .Where(e => typeof(Domain.Common.Entity).IsAssignableFrom(e.ClrType) || e.ClrType == typeof(RefreshToken)))
+            modelBuilder.Entity(entity.ClrType).Property(nameof(Domain.Common.Entity.Id)).ValueGeneratedNever();
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)

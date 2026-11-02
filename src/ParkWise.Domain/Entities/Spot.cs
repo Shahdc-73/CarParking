@@ -48,8 +48,8 @@ public class Spot : Entity
 
     public void SetOutOfService()
     {
-        if (Status == SpotStatus.Occupied)
-            throw new DomainException($"Spot {Code} is occupied and cannot be taken out of service.");
+        if (Status is SpotStatus.Occupied or SpotStatus.Reserved)
+            throw new DomainException($"Spot {Code} is {Status.ToString().ToLowerInvariant()} and cannot be taken out of service.");
         Status = SpotStatus.OutOfService;
     }
 
@@ -58,6 +58,12 @@ public class Spot : Entity
         if (Status != SpotStatus.OutOfService)
             throw new DomainException($"Spot {Code} is not out of service.");
         Status = SpotStatus.Available;
+    }
+
+    public void Rename(string code)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(code);
+        Code = code.Trim().ToUpperInvariant();
     }
 
     public void ChangeType(SpotType type)

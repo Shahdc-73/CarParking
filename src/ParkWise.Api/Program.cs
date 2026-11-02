@@ -1,6 +1,8 @@
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using ParkWise.Api.Infrastructure;
 using ParkWise.Application;
+using ParkWise.Application.Common;
 using ParkWise.Infrastructure;
 using ParkWise.Infrastructure.Identity;
 using ParkWise.Infrastructure.Persistence;
@@ -19,10 +21,14 @@ try
 
     builder.Services.AddControllers(o => o.Filters.Add<ValidationFilter>())
         // Our ValidationFilter replaces the built-in automatic 400, so errors have one consistent shape.
-        .ConfigureApiBehaviorOptions(o => o.SuppressModelStateInvalidFilter = true);
+        .ConfigureApiBehaviorOptions(o => o.SuppressModelStateInvalidFilter = true)
+        // Enums travel as readable strings ("Standard", "OutOfService"), not magic numbers.
+        .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
     builder.Services.AddProblemDetails();
     builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
+    builder.Services.AddHttpContextAccessor();
+    builder.Services.AddScoped<ICurrentUser, CurrentUser>();
     builder.Services.AddApplication();
     builder.Services.AddInfrastructure(builder.Configuration);
     builder.Services.AddJwtAuthentication();

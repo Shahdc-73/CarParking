@@ -17,6 +17,8 @@ public sealed class GlobalExceptionHandler(IProblemDetailsService problems, ILog
             DbUpdateConcurrencyException => (StatusCodes.Status409Conflict, "The resource was modified by someone else. Reload and try again.", "concurrency.conflict"),
             DbUpdateException { InnerException: SqlException { Number: 2601 or 2627 } } =>
                 (StatusCodes.Status409Conflict, "That operation conflicts with existing data.", "data.unique_violation"),
+            DbUpdateException { InnerException: SqlException { Number: 547 } } =>
+                (StatusCodes.Status409Conflict, "That operation conflicts with related data.", "data.reference_conflict"),
             _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred.", "server.error"),
         };
 

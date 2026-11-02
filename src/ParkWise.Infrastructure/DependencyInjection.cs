@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ParkWise.Application.Auth;
+using ParkWise.Application.Common;
 using ParkWise.Application.Users;
 using ParkWise.Infrastructure.Identity;
 using ParkWise.Infrastructure.Persistence;
@@ -22,6 +23,9 @@ public static class DependencyInjection
                 ?? throw new InvalidOperationException("ConnectionStrings:Default is not configured.");
             o.UseSqlServer(cs, sql => sql.EnableRetryOnFailure());
         });
+
+        // Same scoped instance behind both types, so services using IAppDbContext and Identity share one unit of work.
+        services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
 
         services.AddSingleton(TimeProvider.System);
 

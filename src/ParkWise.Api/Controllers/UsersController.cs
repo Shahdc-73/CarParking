@@ -11,8 +11,6 @@ namespace ParkWise.Api.Controllers;
 [Authorize(Roles = Roles.Admin)]
 public class UsersController(IUserService users) : ApiControllerBase
 {
-    public sealed record SetActiveRequest(bool IsActive);
-
     [HttpGet]
     public async Task<ActionResult<PagedResult<UserDto>>> List([FromQuery] UserListQuery query, CancellationToken ct)
         => Ok(await users.ListAsync(query, ct));

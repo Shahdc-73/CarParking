@@ -72,3 +72,64 @@ public class SpotTests
         Assert.Throws<DomainException>(() => level.AddSpot("a-01", SpotType.EV));
     }
 }
+
+public class SpotMaintenanceTests
+{
+    private static Spot NewSpot(SpotType type = SpotType.Standard)
+        => new ParkingLot("Lot", "Addr").AddLevel(1, "L1").AddSpot("A-01", type);
+
+    [Fact]
+    public void Reserved_spot_cannot_be_taken_out_of_service()
+    {
+        var spot = NewSpot();
+        spot.Reserve();
+        Assert.Throws<DomainException>(spot.SetOutOfService);
+        Assert.Equal(SpotStatus.Reserved, spot.Status);
+    }
+
+    [Theory]
+    [InlineData(SpotStatus.Occupied)]
+    [InlineData(SpotStatus.Reserved)]
+    public void Type_cannot_change_while_in_use(SpotStatus status)
+    {
+        var spot = NewSpot();
+        if (status == SpotStatus.Occupied) spot.Occupy(); else spot.Reserve();
+        Assert.Throws<DomainException>(() => spot.ChangeType(SpotType.EV));
+        Assert.Equal(SpotType.Standard, spot.Type);
+    }
+
+    [Fact]
+    public void Type_can_change_when_available_or_out_of_service()
+    {
+        var spot = NewSpot();
+        spot.ChangeType(SpotType.EV);
+        spot.SetOutOfService();
+        spot.ChangeType(SpotType.Compact);
+        Assert.Equal(SpotType.Compact, spot.Type);
+    }
+
+    [Fact]
+    public void Rename_normalizes_the_code()
+    {
+        var spot = NewSpot();
+        spot.Rename("  b-07 ");
+        Assert.Equal("B-07", spot.Code);
+    }
+
+    [Fact]
+    public void Level_rename_rejects_blank_names()
+    {
+        var level = new ParkingLot("Lot", "Addr").AddLevel(1, "L1");
+        level.Rename("Roof");
+        Assert.Equal("Roof", level.Name);
+        Assert.ThrowsAny<ArgumentException>(() => level.Rename(" "));
+    }
+
+    [Fact]
+    public void Duplicate_level_numbers_in_a_lot_are_rejected()
+    {
+        var lot = new ParkingLot("Lot", "Addr");
+        lot.AddLevel(1, "L1");
+        Assert.Throws<DomainException>(() => lot.AddLevel(1, "Again"));
+    }
+}

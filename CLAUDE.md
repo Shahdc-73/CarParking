@@ -17,6 +17,11 @@ Angular (standalone, signals, typed reactive forms, Material) in `web/`. xUnit +
 - Business rules live in Domain/Application, never in controllers. Controllers bind, call one service, map to HTTP.
 - No MediatR. Plain application services. `Result<T>` for expected business failures; exceptions only for the unexpected.
 - DTOs for all API input/output; never expose entities.
+- Feature services (lots, spots, vehicles, audit...) live in Application and use `IAppDbContext` (EF Core `DbSet`s, implemented by `AppDbContext`). Application knows EF Core abstractions, not SQL Server. Identity-bound services (auth, users) live in Infrastructure.
+- Audit: call `IAuditLogger.Log(...)` BEFORE the single `SaveChangesAsync`; it only adds the row, so the change and its audit entry commit in one transaction. Audit every admin mutation.
+- Deleting data that has parking history is blocked (409); deactivate / take out of service instead. Spot type cannot change while in use or with pending reservations.
+- Someone else's resource returns 404, not 403 (vehicles), so ids can't be probed. Ownership rules live in one query helper per service.
+- Entity ids are assigned in code (Guid v7) and configured `ValueGeneratedNever`; without that EF treats new children of tracked parents as existing rows.
 - Identity (`ApplicationUser`) lives in Infrastructure; Domain refers to users by `Guid UserId`.
 - Use `TimeProvider`, never `DateTime.UtcNow` directly.
 - Money is `decimal`. All timestamps UTC; the frontend converts to local time.
