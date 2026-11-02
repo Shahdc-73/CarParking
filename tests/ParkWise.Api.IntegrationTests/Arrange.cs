@@ -2,6 +2,7 @@ using System.Net;
 using Microsoft.Extensions.DependencyInjection;
 using ParkWise.Application.Auth;
 using ParkWise.Application.Parking;
+using ParkWise.Application.Reservations;
 using ParkWise.Application.Sessions;
 using ParkWise.Application.Vehicles;
 using ParkWise.Domain.Entities;
@@ -107,6 +108,29 @@ public sealed class Arrange(ApiFactory factory)
             spots.Add(await SpotAsync(admin, level.Id, $"A-{i + 1:00}", types[i]));
         return (lot, level, spots);
     }
+
+    // ---- reservations ----
+    public static Task<HttpResponseMessage> ReserveAsync(HttpClient client, Guid lotId, Guid vehicleId, SpotType type, DateTime start, TimeSpan length)
+        => client.PostJsonAsync("/api/v1/reservations", new CreateReservationRequest(lotId, vehicleId, type, start, start + length));
+
+    public static async Task<ReservationDto> ReservedAsync(HttpClient client, Guid lotId, Guid vehicleId, DateTime start, TimeSpan? length = null, SpotType type = SpotType.Standard)
+    {
+        var response = await ReserveAsync(client, lotId, vehicleId, type, start, length ?? TimeSpan.FromHours(2));
+        await EnsureCreatedAsync(response);
+        return await response.ReadAsync<ReservationDto>();
+    }
+
+    public static DateTime In(TimeSpan span) => DateTime.UtcNow + span;
+
+    /// <summary>Runs the background job's work once, right now, against the (possibly time-travelled) clock.</summary>
+    public async Task<MaintenanceResult> RunMaintenanceAsync()
+    {
+        using var scope = factory.Services.CreateScope();
+        return await scope.ServiceProvider.GetRequiredService<IReservationMaintenance>().RunOnceAsync(CancellationToken.None);
+    }
+
+    public static async Task<SpotStatus> SpotStatusAsync(HttpClient client, Guid spotId)
+        => (await (await client.GetAsync($"/api/v1/spots/{spotId}")).ReadAsync<SpotDto>()).Status;
 
     // ---- direct database access, only for states that need features built in later phases ----
     public async Task WithDbAsync(Func<AppDbContext, Task> action)

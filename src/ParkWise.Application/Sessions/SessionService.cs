@@ -65,31 +65,63 @@ public sealed class SessionService(
             return Error.Conflict("sessions.vehicle_already_parked", "This vehicle already has an active parking session.");
         }
 
-        // Best-fitting free spot first (e.g. an EV prefers an EV spot, then Standard); lowest level and code win ties.
-        // Only Available spots qualify, so Occupied, Reserved and OutOfService spots are never assigned.
+        var now = Now();
         Spot? spot = null;
-        foreach (var type in Domain.Services.SpotCompatibility.PreferredSpotTypes(vehicle, lot.AllowMotorcycleOverflow))
+
+        // A vehicle that reserved a spot claims it: from 15 minutes before the start until the hold ends. The spot is
+        // Available (not yet held) or Reserved (hold running). If someone else sits in it, fall back to a normal spot.
+        Reservation? reservation = null;
+        if (!isNewVehicle)
         {
-            spot = await (from s in db.Spots
-                          join l in db.Levels on s.LevelId equals l.Id
-                          where l.LotId == lot.Id && s.Type == type && s.Status == SpotStatus.Available
-                          orderby l.Number, s.Code
-                          select s).FirstOrDefaultAsync(ct);
-            if (spot is not null) break;
+            var earliestStart = now + Reservation.EarlyArrival;      // r.Start - EarlyArrival <= now
+            var holdFloor = now - Reservation.HoldDuration;          // now < r.Start + Hold
+            reservation = await (from r in db.Reservations
+                                 join s in db.Spots on r.SpotId equals s.Id
+                                 join l in db.Levels on s.LevelId equals l.Id
+                                 where r.VehicleId == vehicle.Id && r.Status == ReservationStatus.Pending && l.LotId == lot.Id
+                                       && r.StartUtc <= earliestStart && r.StartUtc > holdFloor
+                                 orderby r.StartUtc
+                                 select r).FirstOrDefaultAsync(ct);
+
+            if (reservation is not null)
+            {
+                spot = await db.Spots.SingleAsync(s => s.Id == reservation.SpotId, ct);
+                if (spot.Status is not (SpotStatus.Available or SpotStatus.Reserved))
+                {
+                    spot = null;
+                    reservation = null;
+                }
+            }
+        }
+
+        if (spot is null)
+        {
+            // Best-fitting free spot first (e.g. an EV prefers an EV spot, then Standard); lowest level and code win ties.
+            // Only Available spots qualify, so Occupied, Reserved and OutOfService spots are never assigned.
+            foreach (var type in Domain.Services.SpotCompatibility.PreferredSpotTypes(vehicle, lot.AllowMotorcycleOverflow))
+            {
+                spot = await (from s in db.Spots
+                              join l in db.Levels on s.LevelId equals l.Id
+                              where l.LotId == lot.Id && s.Type == type && s.Status == SpotStatus.Available
+                              orderby l.Number, s.Code
+                              select s).FirstOrDefaultAsync(ct);
+                if (spot is not null) break;
+            }
         }
 
         if (spot is null)
             return Error.Conflict("sessions.no_spot_available", "No compatible spot is free in this lot.");
 
-        var now = Now();
         spot.Occupy();
+        reservation?.Fulfill();
         if (isNewVehicle) db.Vehicles.Add(vehicle);
 
-        var session = new ParkingSession(vehicle.Id, spot.Id, CodeGenerator.Ticket(), now, CurrentUserId());
+        var session = new ParkingSession(vehicle.Id, spot.Id, CodeGenerator.Ticket(), now, CurrentUserId(), reservation?.Id);
         db.Sessions.Add(session);
         audit.Log("Session.CheckedIn", SessionEntity, session.Id, after: new
         {
             session.TicketCode, vehicle.PlateNumber, SpotCode = spot.Code, SpotType = spot.Type, LotId = lot.Id, session.CheckInAtUtc,
+            ReservationId = reservation?.Id,
         });
 
         await db.SaveChangesAsync(ct); // vehicle + spot + session + audit: one transaction
@@ -325,7 +357,7 @@ public sealed class SessionService(
         r.Vehicle.Id, r.Vehicle.PlateNumber, r.Vehicle.Type,
         r.Lot.Id, r.Lot.Name, r.Level.Number, r.Spot.Id, r.Spot.Code, r.Spot.Type,
         r.Session.CheckInAtUtc, r.Session.CheckOutAtUtc, r.Session.Status,
-        r.Receipt?.Id, r.Receipt?.Number, r.Receipt?.Amount);
+        r.Receipt?.Id, r.Receipt?.Number, r.Receipt?.Amount, r.Session.ReservationId);
 
     private static ReceiptDto ToDto(ReceiptRow r) => new(
         r.Receipt.Id, r.Receipt.Number, r.Session.Id, r.Session.TicketCode, r.Vehicle.PlateNumber,

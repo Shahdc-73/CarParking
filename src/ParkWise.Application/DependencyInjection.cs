@@ -4,6 +4,7 @@ using ParkWise.Application.Audit;
 using ParkWise.Application.Common;
 using ParkWise.Application.Parking;
 using ParkWise.Application.Pricing;
+using ParkWise.Application.Reservations;
 using ParkWise.Application.Sessions;
 using ParkWise.Application.Vehicles;
 
@@ -23,6 +24,8 @@ public static class DependencyInjection
         services.AddScoped<IVehicleService, VehicleService>();
         services.AddScoped<IPricingService, PricingService>();
         services.AddScoped<ISessionService, SessionService>();
+        services.AddScoped<IReservationService, ReservationService>();
+        services.AddScoped<IReservationMaintenance, ReservationMaintenance>();
         return services;
     }
 }

@@ -1,6 +1,7 @@
 using FluentValidation.TestHelper;
 using ParkWise.Application.Common;
 using ParkWise.Application.Pricing;
+using ParkWise.Application.Reservations;
 using ParkWise.Application.Sessions;
 using ParkWise.Domain.Enums;
 
@@ -74,4 +75,39 @@ public class SessionAndPricingValidatorTests
     [InlineData(10.555, false)]
     public void Lost_ticket_fee(double amount, bool valid)
         => Assert.Equal(valid, new SaveLostTicketFeeRequestValidator().TestValidate(new SaveLostTicketFeeRequest((decimal)amount, null)).IsValid);
+}
+
+public class ReservationValidatorTests
+{
+    private static readonly DateTime Start = new(2026, 5, 1, 10, 0, 0, DateTimeKind.Utc);
+
+    private static CreateReservationRequest Req(TimeSpan length, SpotType type = SpotType.Standard)
+        => new(Guid.NewGuid(), Guid.NewGuid(), type, Start, Start + length);
+
+    [Theory]
+    [InlineData(30, true)]
+    [InlineData(29, false)]
+    [InlineData(24 * 60, true)]
+    [InlineData(24 * 60 + 1, false)]
+    [InlineData(0, false)]
+    [InlineData(-60, false)]
+    public void Length_must_be_between_30_minutes_and_24_hours(int minutes, bool valid)
+        => Assert.Equal(valid, new CreateReservationRequestValidator().TestValidate(Req(TimeSpan.FromMinutes(minutes))).IsValid);
+
+    [Fact]
+    public void Ids_and_spot_type_are_required()
+    {
+        var v = new CreateReservationRequestValidator();
+        v.TestValidate(Req(TimeSpan.FromHours(1)) with { LotId = Guid.Empty }).ShouldHaveValidationErrorFor(x => x.LotId);
+        v.TestValidate(Req(TimeSpan.FromHours(1)) with { VehicleId = Guid.Empty }).ShouldHaveValidationErrorFor(x => x.VehicleId);
+        v.TestValidate(Req(TimeSpan.FromHours(1), (SpotType)99)).ShouldHaveValidationErrorFor(x => x.SpotType);
+    }
+
+    [Fact]
+    public void Availability_queries_need_an_end_after_the_start()
+    {
+        var v = new ReservationAvailabilityQueryValidator();
+        Assert.True(v.TestValidate(new ReservationAvailabilityQuery(Guid.NewGuid(), SpotType.EV, Start, Start.AddHours(1))).IsValid);
+        Assert.False(v.TestValidate(new ReservationAvailabilityQuery(Guid.NewGuid(), SpotType.EV, Start, Start)).IsValid);
+    }
 }

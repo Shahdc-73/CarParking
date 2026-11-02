@@ -46,6 +46,7 @@ internal sealed class VehicleConfiguration : IEntityTypeConfiguration<Vehicle>
         b.Property(x => x.PlateNumber).HasMaxLength(10);
         b.Property(x => x.Color).HasMaxLength(30);
         b.Property(x => x.Type).HasConversion<string>().HasMaxLength(20);
+        b.Property(x => x.RowVersion).IsRowVersion();
         b.HasIndex(x => x.PlateNumber).IsUnique();
         b.HasIndex(x => x.OwnerUserId);
     }

@@ -54,10 +54,10 @@ public class ModelTests
     }
 
     [Fact]
-    public void Spot_and_reservation_have_rowversion_concurrency_tokens()
+    public void Spot_reservation_and_vehicle_have_rowversion_concurrency_tokens()
     {
         using var db = NewContext();
-        foreach (var type in new[] { typeof(Spot), typeof(Reservation) })
+        foreach (var type in new[] { typeof(Spot), typeof(Reservation), typeof(Vehicle) })
         {
             var property = DesignModel(db).FindEntityType(type)!.FindProperty("RowVersion")!;
             Assert.True(property.IsConcurrencyToken);

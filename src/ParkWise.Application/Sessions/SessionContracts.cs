@@ -15,7 +15,7 @@ public sealed record SessionDto(
     Guid VehicleId, string PlateNumber, VehicleType VehicleType,
     Guid LotId, string LotName, int LevelNumber, Guid SpotId, string SpotCode, SpotType SpotType,
     DateTime CheckInAtUtc, DateTime? CheckOutAtUtc, SessionStatus Status,
-    Guid? ReceiptId, string? ReceiptNumber, decimal? AmountPaid);
+    Guid? ReceiptId, string? ReceiptNumber, decimal? AmountPaid, Guid? ReservationId);
 
 public sealed record FeePreviewDto(Guid SessionId, DateTime AtUtc, decimal Amount, FeeBreakdown Breakdown);
 

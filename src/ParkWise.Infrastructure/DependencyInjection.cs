@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using ParkWise.Application.Auth;
 using ParkWise.Application.Common;
 using ParkWise.Application.Users;
+using ParkWise.Infrastructure.BackgroundJobs;
 using ParkWise.Infrastructure.Identity;
 using ParkWise.Infrastructure.Persistence;
 
@@ -56,6 +57,11 @@ public static class DependencyInjection
         services.AddScoped<IUserService, UserService>();
         // Stateless and holds no scoped dependencies, so a singleton is safe and cheaper.
         services.AddSingleton<IJwtTokenService, JwtTokenService>();
+
+
+        // Bound lazily from configuration so a test host (or ops) can switch the job off without code changes.
+        services.AddOptions<ReservationJobOptions>().Bind(config.GetSection(ReservationJobOptions.Section));
+        services.AddHostedService<ReservationExpiryWorker>();
 
         return services;
     }

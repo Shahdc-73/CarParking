@@ -32,6 +32,10 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.UseSetting("Jwt:Key", "integration-test-signing-key-0123456789-abcdef");
         builder.UseSetting("Seed:Password", SeedPassword);
 
+        // The timer-driven job is OFF in tests: the shared clock jumps forward in other tests, which would make a live job
+        // expire unrelated reservations. Tests run the very same maintenance service on demand instead (Arrange.RunMaintenanceAsync).
+        builder.UseSetting("Reservations:ExpiryJob:Enabled", "false");
+
         builder.ConfigureTestServices(services =>
         {
             services.RemoveAll<TimeProvider>();

@@ -22,6 +22,9 @@ public interface IAppDbContext
     DbSet<Payment> Payments { get; }
     DbSet<Receipt> Receipts { get; }
 
+    /// <summary>Lets a service force an UPDATE of a row (e.g. to bump its rowversion as a concurrency guard).</summary>
+    EntityEntry<TEntity> Entry<TEntity>(TEntity entity) where TEntity : class;
+
     /// <summary>Exposed so a service can discard a failed unit of work and retry from a clean slate.</summary>
     ChangeTracker ChangeTracker { get; }
 

@@ -26,6 +26,9 @@ public class Vehicle : Entity
 
     public bool HasDisabledPermit { get; private set; }
 
+    /// <summary>Concurrency token. Reservations touch it so one vehicle cannot be double-booked by two simultaneous requests.</summary>
+    public byte[] RowVersion { get; private set; } = [];
+
     /// <summary>"ab-123 c" and "AB123C" must be the same vehicle, so the unique index is on the normalized form.</summary>
     public static string NormalizePlate(string plate)
     {

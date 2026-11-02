@@ -138,7 +138,6 @@ namespace ParkWise.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("ParkWise.Domain.Entities.AuditLog", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Action")
@@ -184,7 +183,6 @@ namespace ParkWise.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("ParkWise.Domain.Entities.Level", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("LotId")
@@ -209,7 +207,6 @@ namespace ParkWise.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("ParkWise.Domain.Entities.LostTicketFee", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Amount")
@@ -230,7 +227,6 @@ namespace ParkWise.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("ParkWise.Domain.Entities.ParkingLot", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Address")
@@ -260,7 +256,6 @@ namespace ParkWise.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("ParkWise.Domain.Entities.ParkingSession", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CheckInAtUtc")
@@ -318,7 +313,6 @@ namespace ParkWise.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("ParkWise.Domain.Entities.Payment", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Amount")
@@ -360,7 +354,6 @@ namespace ParkWise.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("ParkWise.Domain.Entities.PricingRule", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("DailyCap")
@@ -393,7 +386,6 @@ namespace ParkWise.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("ParkWise.Domain.Entities.Receipt", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Amount")
@@ -430,7 +422,6 @@ namespace ParkWise.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("ParkWise.Domain.Entities.Reservation", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("DriverUserId")
@@ -475,7 +466,6 @@ namespace ParkWise.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("ParkWise.Domain.Entities.Spot", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Code")
@@ -515,7 +505,6 @@ namespace ParkWise.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("ParkWise.Domain.Entities.Vehicle", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Color")
@@ -533,6 +522,12 @@ namespace ParkWise.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
                     b.Property<string>("Type")
                         .IsRequired()
@@ -659,7 +654,6 @@ namespace ParkWise.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("ParkWise.Infrastructure.Identity.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedUtc")
